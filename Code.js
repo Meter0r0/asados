@@ -699,6 +699,9 @@ function getDashboardData() {
       caja: {
         efectivo: 0,
         cbu: 0,
+        cobradoTotal: 0,
+        ventasTotal: 0,
+        sinClasificar: 0,
         total: 0
       },
       preventaQty: 0,
@@ -708,7 +711,7 @@ function getDashboardData() {
     // Inicializar vendedores oficiales
     const vendedoresOficiales = ["Joaco", "Fusche", "MartinC", "MartinD", "Fortu", "Garu", "Facu"];
     vendedoresOficiales.forEach(v => {
-      stats.vendedores[v] = { efectivo: 0, cbu: 0, total: 0, albums: 0, albums30k: 0, paquetes: 0 };
+      stats.vendedores[v] = { efectivo: 0, cbu: 0, total: 0, sinClasificar: 0, albums: 0, albums30k: 0, paquetes: 0 };
     });
 
     if (!sheet) {
@@ -771,7 +774,7 @@ function getDashboardData() {
       if (!vendedor) {
         vendedor = vendedorRaw;
         if (!stats.vendedores[vendedor]) {
-          stats.vendedores[vendedor] = { efectivo: 0, cbu: 0, total: 0, albums: 0, albums30k: 0, paquetes: 0 };
+          stats.vendedores[vendedor] = { efectivo: 0, cbu: 0, total: 0, sinClasificar: 0, albums: 0, albums30k: 0, paquetes: 0 };
         }
       }
 
@@ -784,9 +787,10 @@ function getDashboardData() {
       const efectivo = getValue(row, colIndex.efectivo);
       const cbu = getValue(row, colIndex.cbu);
       
-      // Consistencia matemática: el total cobrado de una venta es la suma de los métodos de pago (Efectivo + CBU).
-      const totalCobradoMetodos = efectivo + cbu;
-      const total = totalCobradoMetodos > 0 ? totalCobradoMetodos : (rawTotal > 0 ? rawTotal : (albums * 25000 + albums30k * 30000 + paq1 * 3000 + paq4 * 10000 + paq10 * 20000));
+      const prodTotal = (albums * 25000 + albums30k * 30000 + paq1 * 3000 + paq4 * 10000 + paq10 * 20000);
+      const cobradoMetodos = efectivo + cbu;
+      const totalVenta = rawTotal > 0 ? rawTotal : (cobradoMetodos > 0 ? cobradoMetodos : prodTotal);
+      const sinClasificarFila = cobradoMetodos > 0 ? Math.max(0, totalVenta - cobradoMetodos) : totalVenta;
       const paquetesFila = paq1 + (paq4 * 4) + (paq10 * 10);
 
       // Acumular cantidades e ingresos
@@ -808,7 +812,8 @@ function getDashboardData() {
       // Acumular por vendedor
       stats.vendedores[vendedor].efectivo += efectivo;
       stats.vendedores[vendedor].cbu += cbu;
-      stats.vendedores[vendedor].total += total;
+      stats.vendedores[vendedor].total += totalVenta;
+      stats.vendedores[vendedor].sinClasificar += sinClasificarFila;
       stats.vendedores[vendedor].albums += albums;
       stats.vendedores[vendedor].albums30k += albums30k;
       stats.vendedores[vendedor].paquetes += paquetesFila;
@@ -816,7 +821,10 @@ function getDashboardData() {
       // Acumular total global
       stats.caja.efectivo += efectivo;
       stats.caja.cbu += cbu;
-      stats.caja.total += total;
+      stats.caja.cobradoTotal += cobradoMetodos;
+      stats.caja.ventasTotal += totalVenta;
+      stats.caja.sinClasificar += sinClasificarFila;
+      stats.caja.total += totalVenta;
 
       // Acumular ventas por semana
       const rawTimestamp = row[colIndex.timestamp];
