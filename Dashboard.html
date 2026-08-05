@@ -1,0 +1,1026 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <base target="_top">
+    <meta charset="utf-8">
+    <title>Dashboard de Ventas - ORC</title>
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+      tailwind.config = {
+        theme: {
+          extend: {
+            colors: {
+              slate: {
+                800: '#1e293b',
+                850: '#1e293b', // fallback
+                900: '#0f172a',
+                950: '#020617',
+              }
+            }
+          }
+        }
+      }
+    </script>
+    <!-- Chart.js CDN -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels@2"></script>
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;450;600;800;900&family=Plus+Jakarta+Sans:wght@300;400;600;700;800&display=swap" rel="stylesheet">
+    <style>
+      body {
+        font-family: 'Plus Jakarta Sans', sans-serif;
+        background: radial-gradient(circle at top, #0f172a 0%, #020617 100%);
+      }
+      h1, h2, h3, .font-outfit {
+        font-family: 'Outfit', sans-serif;
+      }
+      .loader-mini {
+        border: 2px solid transparent;
+        border-radius: 50%;
+        border-top: 2px solid #6366f1;
+        width: 16px;
+        height: 16px;
+        animation: spin 1s linear infinite;
+      }
+      @keyframes spin {
+        0% { transform: rotate(0deg); }
+        100% { transform: rotate(360deg); }
+      }
+    </style>
+  </head>
+  <body class="min-h-screen text-slate-100 flex flex-col antialiased">
+    
+    <!-- Toast Notification -->
+    <div id="toast" class="fixed bottom-5 right-5 z-50 transform translate-y-20 opacity-0 transition-all duration-300 pointer-events-none">
+      <div class="bg-slate-900 border border-slate-700 text-slate-100 px-4 py-3 rounded-lg shadow-2xl flex items-center space-x-2">
+        <span id="toastIcon">🔄</span>
+        <span id="toastMessage" class="text-sm font-medium">Cargando...</span>
+      </div>
+    </div>
+
+    <!-- Main Container -->
+    <div class="w-full max-w-5xl mx-auto px-4 py-6 flex-grow flex flex-col space-y-6">
+      
+      <!-- Header -->
+      <div class="flex flex-col sm:flex-row justify-between items-center bg-slate-900/70 border border-slate-800 backdrop-blur-md rounded-2xl p-5 gap-4 shadow-lg">
+        <div class="text-center sm:text-left">
+          <div class="flex items-center justify-center sm:justify-start space-x-2">
+            <span class="text-3xl">📊</span>
+            <h1 class="text-xl font-extrabold tracking-tight text-white">Dashboard de Ventas</h1>
+          </div>
+          <p class="text-slate-400 text-xs mt-0.5 font-medium">Estadísticas y resumen de ventas en tiempo real</p>
+        </div>
+        <div class="flex items-center space-x-2">
+          <button onclick="fetchStats()" class="p-2.5 bg-slate-800 hover:bg-slate-700 border border-slate-700 text-slate-200 rounded-xl text-xs font-bold transition flex items-center space-x-1.5" title="Actualizar datos">
+            <span>🔄</span> <span class="hidden sm:inline">Actualizar</span>
+          </button>
+          <a id="btnAsistencia" href="#" target="_top" class="inline-flex items-center space-x-1.5 px-4 py-2.5 bg-slate-800 hover:bg-slate-700 border border-slate-700 text-slate-350 hover:text-white rounded-xl text-xs font-bold transition">
+            <span>📅 Asistencia</span>
+          </a>
+          <a id="btnPuntoVenta" href="#" target="_top" class="inline-flex items-center space-x-1.5 px-4 py-2.5 bg-slate-800 hover:bg-slate-700 border border-slate-700 text-slate-350 hover:text-white rounded-xl text-xs font-bold transition">
+            <span>🛒 Punto de Venta</span>
+          </a>
+          <a id="btnHistorial" href="#" target="_top" class="inline-flex items-center space-x-1.5 px-4 py-2.5 bg-slate-800 hover:bg-slate-700 border border-slate-700 text-slate-350 hover:text-white rounded-xl text-xs font-bold transition">
+            <span>📋 Historial</span>
+          </a>
+          <a id="btnPreventa" href="#" target="_top" class="inline-flex items-center space-x-1.5 px-4 py-2.5 bg-slate-800 hover:bg-slate-700 border border-slate-700 text-slate-350 hover:text-white rounded-xl text-xs font-bold transition">
+            <span>📢 Reserva de Álbumes</span>
+          </a>
+        </div>
+      </div>
+
+      <!-- Main Loader State -->
+      <div id="mainLoader" class="flex-grow flex flex-col items-center justify-center py-20 space-y-4">
+        <div class="loader-mini !w-10 !h-10 !border-4 !border-t-indigo-500"></div>
+        <p class="text-slate-400 text-sm font-semibold">Cargando estadísticas de Google Sheets...</p>
+      </div>
+
+      <!-- Main Error State (Visibles si falla el servidor o renderizado) -->
+      <div id="mainError" class="hidden flex-grow flex flex-col items-center justify-center py-12 px-4">
+        <div class="w-full max-w-xl bg-slate-900/90 border border-rose-500/40 rounded-2xl p-6 shadow-2xl space-y-4 text-center">
+          <div class="inline-flex items-center justify-center w-14 h-14 bg-rose-500/10 rounded-full text-2xl text-rose-400 mb-1">
+            ⚠️
+          </div>
+          <h2 class="text-lg font-bold text-rose-200">Error al cargar el Dashboard</h2>
+          <p id="errorMessage" class="text-xs text-rose-300/90 bg-slate-950/70 p-4 rounded-xl border border-rose-900/50 font-mono text-left break-words overflow-x-auto">
+            Ocurrió un error al consultar la planilla de Google Sheets.
+          </p>
+          <div class="flex justify-center gap-3 pt-2">
+            <button onclick="fetchStats()" class="px-5 py-2.5 bg-indigo-600 hover:bg-indigo-500 text-white font-bold text-xs rounded-xl shadow-lg transition flex items-center space-x-1.5">
+              <span>🔄</span> <span>Reintentar Carga</span>
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Main Content (Hidden until loaded) -->
+      <div id="mainContent" class="space-y-6 hidden">
+        
+        <!-- Top Stats Row (Goal Progress, Caja General, Album Stats, Reserva de Álbumes) -->
+        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+          
+          <!-- Goal Progress (Objetivo 37.000 Paquetes) -->
+          <div class="relative overflow-hidden bg-gradient-to-br from-indigo-500/10 to-purple-600/5 border border-indigo-500/30 rounded-2xl p-6 shadow-xl flex flex-col justify-between">
+            <!-- Glow Effect -->
+            <div class="absolute -right-4 -top-4 w-24 h-24 bg-indigo-500/20 rounded-full blur-2xl"></div>
+            <div>
+              <div class="flex justify-between items-center mb-2">
+                <span class="text-[10px] text-indigo-300 font-extrabold uppercase tracking-widest bg-indigo-500/10 px-2 py-1 rounded-full">🎯 Objetivo General</span>
+                <span id="goalPercent" class="text-xs font-black text-indigo-300 font-mono">0%</span>
+              </div>
+              <h3 class="text-lg font-black text-white tracking-tight">Objetivo: 37.000 Paquetes</h3>
+              <p class="text-[11px] text-slate-400 mt-1 font-medium">Progreso de paquetes acumulados vendidos</p>
+              
+              <!-- Progress Bar -->
+              <div class="w-full bg-slate-950 rounded-full h-3.5 mt-4 overflow-hidden border border-slate-800 p-0.5">
+                <div id="goalProgressBar" class="bg-gradient-to-r from-indigo-500 to-emerald-400 h-2 rounded-full transition-all duration-1000 shadow-[0_0_8px_rgba(99,102,241,0.5)]" style="width: 0%"></div>
+              </div>
+            </div>
+            <div class="mt-4 pt-3 border-t border-indigo-500/10 grid grid-cols-2 gap-4">
+              <div>
+                <span class="text-[9px] text-slate-450 uppercase font-extrabold tracking-wider block">Vendidos</span>
+                <strong id="goalPacksSold" class="text-xl font-black text-slate-100 font-mono">0</strong>
+              </div>
+              <div class="text-right">
+                <span class="text-[9px] text-slate-450 uppercase font-extrabold tracking-wider block">Restan</span>
+                <strong id="goalPacksRemaining" class="text-xl font-black text-emerald-400 font-mono">37.000</strong>
+              </div>
+            </div>
+          </div>
+
+          <!-- Global Box (Caja General) -->
+          <div class="bg-slate-900/80 border border-slate-800 rounded-2xl p-6 shadow-xl flex flex-col justify-between">
+            <div>
+              <div class="flex justify-between items-center mb-4">
+                <span class="text-[10px] text-indigo-300 font-extrabold uppercase tracking-widest bg-indigo-500/10 px-2 py-1 rounded-full">💵 Caja General</span>
+                <span class="text-2xl">💰</span>
+              </div>
+              <h3 id="cajaTotal" class="text-3xl font-black text-white font-mono font-outfit">$0</h3>
+              <p class="text-xs text-slate-400 mt-1 font-medium">Suma acumulada de efectivo y CBU</p>
+            </div>
+            <div class="mt-6 pt-4 border-t border-slate-800 flex justify-between items-center text-xs text-slate-300">
+              <div class="flex items-center space-x-1">
+                <span>💵 Ef:</span>
+                <span id="cajaEfectivo" class="font-bold text-slate-200 font-mono">$0</span>
+              </div>
+              <div class="flex items-center space-x-1">
+                <span>💳 CBU:</span>
+                <span id="cajaCbu" class="font-bold text-slate-200 font-mono">$0</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- Total Albums Sold (Álbumes Totales) -->
+          <div class="bg-slate-900/80 border border-slate-800 rounded-2xl p-6 shadow-xl flex flex-col justify-between">
+            <div>
+              <div class="flex justify-between items-center mb-4">
+                <span class="text-[10px] text-emerald-300 font-extrabold uppercase tracking-widest bg-emerald-500/10 px-2 py-1 rounded-full">📖 Álbumes Vendidos</span>
+                <span class="text-2xl">📖</span>
+              </div>
+              <h3 id="albumsTotal" class="text-3xl font-black text-white font-mono font-outfit">0</h3>
+              <p class="text-xs text-slate-400 mt-1 font-medium">Libros físicos entregados en el punto de venta</p>
+            </div>
+            <div class="mt-6 pt-4 border-t border-slate-800 flex justify-between items-center text-[10px] text-slate-400 uppercase font-extrabold">
+              <span>Recaudación Álbumes: <strong id="albumsRevenue" class="text-emerald-400 font-mono">$0</strong></span>
+            </div>
+          </div>
+
+          <!-- Álbumes Pendientes de Entrega -->
+          <div class="bg-slate-900/80 border border-slate-800 rounded-2xl p-6 shadow-xl flex flex-col justify-between">
+            <div>
+              <div class="flex justify-between items-center mb-4">
+                <span class="text-[10px] text-amber-400 font-extrabold uppercase tracking-widest bg-amber-500/10 px-2 py-1 rounded-full">📦 Pendientes de Entrega</span>
+                <span class="text-2xl">📦</span>
+              </div>
+              <h3 id="albumsReservados" class="text-3xl font-black text-white font-mono font-outfit">0</h3>
+              <p class="text-xs text-slate-400 mt-1 font-medium">Álbumes reservados pendientes de ser entregados</p>
+            </div>
+            <div class="mt-6 pt-2.5 border-t border-slate-800 flex justify-between items-center">
+              <button onclick="downloadReservasPdf()" class="w-full py-2 bg-amber-600 hover:bg-amber-700 active:scale-95 text-white text-[10px] font-extrabold uppercase tracking-wider rounded-xl transition shadow-md shadow-amber-950/40">
+                📄 Exportar PDF Pendientes
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <!-- Sección de Proyección y Evolución Semanal -->
+        <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+          
+          <!-- Curva de Ventas Semanales (2 cols en LG) -->
+          <div class="lg:col-span-2 bg-slate-900/70 border border-slate-800 backdrop-blur-md rounded-2xl p-5 shadow-lg flex flex-col justify-between">
+            <div class="flex justify-between items-center mb-3">
+              <div>
+                <h2 class="text-xs font-semibold text-slate-300 uppercase tracking-widest flex items-center space-x-2">
+                  <span>📈 Evolución de Ventas Semanales</span>
+                </h2>
+                <p class="text-[11px] text-slate-400 mt-0.5 font-medium">Curva de paquetes vendidos por semana y progreso acumulado</p>
+              </div>
+              <span class="text-[10px] font-extrabold uppercase tracking-widest text-indigo-400 bg-indigo-500/10 px-2 py-1 rounded-full border border-indigo-500/20">Ritmo de Ventas</span>
+            </div>
+            <div class="w-full h-[250px] relative">
+              <canvas id="weeklyChart"></canvas>
+            </div>
+          </div>
+
+          <!-- Tarjeta KPI de Proyección (1 col en LG) -->
+          <div class="bg-gradient-to-br from-slate-900/90 to-indigo-950/40 border border-indigo-500/20 rounded-2xl p-5 shadow-lg flex flex-col justify-between space-y-3 relative overflow-hidden">
+            <!-- Glow element -->
+            <div class="absolute -right-6 -bottom-6 w-32 h-32 bg-indigo-500/10 rounded-full blur-3xl"></div>
+            
+            <div>
+              <div class="flex justify-between items-center mb-2">
+                <span class="text-[10px] text-indigo-300 font-extrabold uppercase tracking-widest bg-indigo-500/10 px-2 py-1 rounded-full">⏳ Proyección al Objetivo</span>
+                <span class="text-xl">🔮</span>
+              </div>
+              <h3 class="text-sm font-extrabold text-white tracking-tight">Estimación a la Venta Actual</h3>
+              <p class="text-[10px] text-slate-400 mt-0.5 font-medium">Semanas faltantes para alcanzar los 37.000 paquetes</p>
+            </div>
+
+            <!-- Metricas Clave de Proyección -->
+            <div class="space-y-3 bg-slate-950/50 p-3.5 rounded-xl border border-slate-800/80">
+              
+              <div class="flex justify-between items-center">
+                <div class="flex items-center space-x-2">
+                  <span class="text-base">📊</span>
+                  <div>
+                    <span class="text-[9px] text-slate-400 font-extrabold uppercase tracking-wide block">Promedio Semanal</span>
+                    <span class="text-[10px] font-medium text-slate-300">Ritmo reciente de ventas</span>
+                  </div>
+                </div>
+                <strong id="projPromedio" class="text-sm font-black text-indigo-300 font-mono">0 paq/sem</strong>
+              </div>
+
+              <div class="border-t border-slate-800/60 pt-2 flex justify-between items-center">
+                <div class="flex items-center space-x-2">
+                  <span class="text-base">⏱️</span>
+                  <div>
+                    <span class="text-[9px] text-slate-400 font-extrabold uppercase tracking-wide block">Semanas Faltantes</span>
+                    <span class="text-[10px] font-medium text-slate-300">Para completar objetivo</span>
+                  </div>
+                </div>
+                <strong id="projSemanas" class="text-lg font-black text-amber-400 font-mono">0 sem</strong>
+              </div>
+
+              <div class="border-t border-slate-800/60 pt-2 flex justify-between items-center">
+                <div class="flex items-center space-x-2">
+                  <span class="text-base">📅</span>
+                  <div>
+                    <span class="text-[9px] text-slate-400 font-extrabold uppercase tracking-wide block">Fecha Estimada</span>
+                    <span class="text-[10px] font-medium text-slate-300">Finalización estimada</span>
+                  </div>
+                </div>
+                <strong id="projFecha" class="text-[11px] font-extrabold text-emerald-400 font-mono text-right">-</strong>
+              </div>
+
+            </div>
+
+            <div class="text-[9px] text-slate-500 font-medium text-center">
+              * Calculado con la velocidad de ventas de la planilla.
+            </div>
+
+          </div>
+
+        </div>
+
+        <!-- Proportions Row -->
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+          <!-- Proporción de Productos Card -->
+          <div class="bg-slate-900/60 border border-slate-800 backdrop-blur-md rounded-2xl p-5 shadow-lg flex flex-col items-center">
+            <h2 class="text-xs font-semibold text-slate-300 uppercase tracking-widest self-start pl-1 mb-4">Proporción de Productos Vendidos</h2>
+            <div class="w-full max-w-[280px] h-[280px] flex items-center justify-center relative">
+              <canvas id="productChart"></canvas>
+            </div>
+          </div>
+          <!-- Proporción de Formas de Pago Card -->
+          <div class="bg-slate-900/60 border border-slate-800 backdrop-blur-md rounded-2xl p-5 shadow-lg flex flex-col items-center">
+            <h2 class="text-xs font-semibold text-slate-300 uppercase tracking-widest self-start pl-1 mb-4">Proporción de Formas de Cobro</h2>
+            <div class="w-full max-w-[280px] h-[280px] flex items-center justify-center relative">
+              <canvas id="paymentChart"></canvas>
+            </div>
+          </div>
+        </div>
+
+        <!-- Dashboard Grid (Product Breakdown & Seller Totals) -->
+        <div class="grid grid-cols-1 lg:grid-cols-5 gap-6 items-start">
+          
+          <!-- Product Breakdown (2/5 width) -->
+          <div class="lg:col-span-2 bg-slate-900/60 border border-slate-800 rounded-2xl p-5 shadow-lg space-y-4">
+            <h2 class="text-xs font-semibold text-slate-300 uppercase tracking-widest pl-1 mb-2">Ventas por Producto</h2>
+            
+            <div class="space-y-3" id="productsList">
+              <!-- Dinámico -->
+            </div>
+          </div>
+
+          <!-- Seller Sales Detail (3/5 width) -->
+          <div class="lg:col-span-3 bg-slate-900/60 border border-slate-800 rounded-2xl p-5 shadow-lg space-y-4">
+            <h2 class="text-xs font-semibold text-slate-300 uppercase tracking-widest pl-1 mb-2">Detalle de Ventas por Asistente</h2>
+            
+            <div class="overflow-x-auto rounded-xl border border-slate-800 bg-slate-950/40">
+              <table class="min-w-full divide-y divide-slate-800">
+                <thead class="bg-slate-900/40 text-[10px] text-slate-400 uppercase tracking-wider font-extrabold text-left">
+                  <tr>
+                    <th scope="col" class="px-4 py-3">Asistente</th>
+                    <th scope="col" class="px-4 py-3 text-center">Álbumes</th>
+                    <th scope="col" class="px-4 py-3 text-center">Paquetes</th>
+                    <th scope="col" class="px-4 py-3 text-right">Efectivo / CBU</th>
+                    <th scope="col" class="px-4 py-3 text-right">Recaudado</th>
+                  </tr>
+                </thead>
+                <tbody id="sellersLeaderboard" class="divide-y divide-slate-800 text-xs">
+                  <!-- Dinámico -->
+                </tbody>
+              </table>
+            </div>
+          </div>
+
+        </div>
+
+        <!-- Recent Sales Feed (Full Width) -->
+        <div class="bg-slate-900/60 border border-slate-800 rounded-2xl p-5 shadow-lg space-y-4">
+          <h2 class="text-xs font-semibold text-slate-300 uppercase tracking-widest pl-1 mb-2">Detalle de las Ventas Realizadas (Últimas 15)</h2>
+          
+          <div class="overflow-x-auto rounded-xl border border-slate-800 bg-slate-950/40">
+            <table class="min-w-full divide-y divide-slate-800">
+              <thead class="bg-slate-900/40 text-[10px] text-slate-400 uppercase tracking-wider font-extrabold text-left">
+                <tr>
+                  <th scope="col" class="px-4 py-3">Fecha y Hora</th>
+                  <th scope="col" class="px-4 py-3">Asistente</th>
+                  <th scope="col" class="px-4 py-3">Productos Vendidos</th>
+                  <th scope="col" class="px-4 py-3">Observaciones</th>
+                  <th scope="col" class="px-4 py-3 text-right">Total Cobrado</th>
+                </tr>
+              </thead>
+              <tbody id="recentSalesFeed" class="divide-y divide-slate-800 text-xs">
+                <!-- Dinámico -->
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+      </div>
+
+    </div>
+
+    <!-- Footer -->
+    <footer class="w-full text-center py-6 text-[10px] text-slate-500 border-t border-slate-900">
+      <p id="footerText">Club Olivos Hockey - Sistema de Control Interno</p>
+    </footer>
+
+    <!-- Logic Script -->
+    <script>
+      let isFetching = false;
+
+      window.addEventListener('DOMContentLoaded', () => {
+        setupNavUrls();
+        fetchStats();
+      });
+
+      // Configura los enlaces de navegación a partir de la URL de publicación de Apps Script
+      function setupNavUrls() {
+        if (typeof google !== 'undefined' && google.script && google.script.run) {
+          google.script.run
+            .withSuccessHandler(url => {
+              document.getElementById('btnAsistencia').href = url + '?page=asistencia';
+              document.getElementById('btnPuntoVenta').href = url + '?page=puntoventa';
+              document.getElementById('btnHistorial').href = url + '?page=historial';
+              document.getElementById('btnPreventa').href = 'https://script.google.com/macros/s/AKfycbz-fgBkbynC_yw8R8t2bs7xNfpHJI4JwsE0pjtQD2Zthd9uqtNB22HKFyuurwZxqakF/exec';
+            })
+            .getWebAppUrl();
+        }
+      }
+
+      // Muestra un contenedor de error visible en el centro del Dashboard
+      function showError(msg) {
+        const loader = document.getElementById('mainLoader');
+        const content = document.getElementById('mainContent');
+        const errorDiv = document.getElementById('mainError');
+        const errorMsg = document.getElementById('errorMessage');
+
+        if (loader) loader.classList.add('hidden');
+        if (content) content.classList.add('hidden');
+        if (errorMsg) errorMsg.textContent = msg || "Error desconocido al procesar la solicitud.";
+        if (errorDiv) errorDiv.classList.remove('hidden');
+        showToast("❌ Error al cargar dashboard", "error");
+      }
+
+      window.addEventListener('error', (event) => {
+        console.error("Error global detectado:", event.error || event.message);
+        showError("Error en la interfaz: " + (event.message || "Error no controlado"));
+      });
+
+      // Consulta los datos del servidor
+      function fetchStats() {
+        if (isFetching) return;
+        isFetching = true;
+
+        const loader = document.getElementById('mainLoader');
+        const content = document.getElementById('mainContent');
+        const errorDiv = document.getElementById('mainError');
+
+        if (errorDiv) errorDiv.classList.add('hidden');
+        if (loader) loader.classList.remove('hidden');
+        if (content) content.classList.add('hidden');
+
+        showToast("Consultando planilla de ventas...", "loading");
+
+        if (typeof google !== 'undefined' && google.script && google.script.run) {
+          google.script.run
+            .withSuccessHandler(data => {
+              isFetching = false;
+              try {
+                if (!data) {
+                  throw new Error("El servidor devolvió una respuesta vacía o nula.");
+                }
+                if (data.error) {
+                  showError(data.error);
+                  return;
+                }
+                renderStats(data);
+                if (loader) loader.classList.add('hidden');
+                if (content) content.classList.remove('hidden');
+                showToast("✓ Datos actualizados", "success");
+              } catch (err) {
+                showError("Error al procesar/renderizar estadísticas: " + err.message);
+              }
+            })
+            .withFailureHandler(err => {
+              isFetching = false;
+              const errorText = (err && err.message) ? err.message : String(err);
+              showError("Error desde Google Apps Script: " + errorText);
+            })
+            .getDashboardData();
+        } else {
+          // Offline Mock
+          setTimeout(() => {
+            isFetching = false;
+            try {
+              const mockData = getMockData();
+              renderStats(mockData);
+              if (loader) loader.classList.add('hidden');
+              if (content) content.classList.remove('hidden');
+              showToast("✓ Datos actualizados (Mock)", "success");
+            } catch (err) {
+              showError("Error al cargar datos simulados (Mock): " + err.message);
+            }
+          }, 1000);
+        }
+      }
+
+      // Formateador de moneda
+      const currencyFormatter = new Intl.NumberFormat('es-AR', {
+        style: 'currency',
+        currency: 'ARS',
+        minimumFractionDigits: 0
+      });
+
+      // Renderiza los datos en el HTML
+      function renderStats(data) {
+        if (!data) return;
+        const prodsData = data.productos || {};
+        const albums = prodsData.albums || { qty: 0, revenue: 0 };
+        const albums30k = prodsData.albums30k || { qty: 0, revenue: 0 };
+        const paq1 = prodsData.paq1 || { qty: 0, revenue: 0 };
+        const paq4 = prodsData.paq4 || { qty: 0, revenue: 0 };
+        const paq10 = prodsData.paq10 || { qty: 0, revenue: 0 };
+
+        // 1. Progreso del Objetivo (37.000 paquetes)
+        const pack1Qty = paq1.qty || 0;
+        const paq4Qty = paq4.qty || 0;
+        const paq10Qty = paq10.qty || 0;
+        const totalPacks = pack1Qty + (paq4Qty * 4) + (paq10Qty * 10);
+        
+        const targetPacks = 37000;
+        const percentage = Math.min(100, Math.round((totalPacks / targetPacks) * 100));
+        
+        document.getElementById('goalPercent').textContent = `${percentage}%`;
+        document.getElementById('goalProgressBar').style.width = `${percentage}%`;
+        document.getElementById('goalPacksSold').textContent = totalPacks.toLocaleString('es-AR');
+        
+        const remaining = Math.max(0, targetPacks - totalPacks);
+        document.getElementById('goalPacksRemaining').textContent = remaining.toLocaleString('es-AR');
+
+        // 2. Caja General
+        const caja = data.caja || { efectivo: 0, cbu: 0, total: 0 };
+        const cajaEfVal = caja.efectivo || 0;
+        const cajaCbuVal = caja.cbu || 0;
+        const cajaTotVal = (cajaEfVal + cajaCbuVal) > 0 ? (cajaEfVal + cajaCbuVal) : (caja.total || 0);
+
+        document.getElementById('cajaTotal').textContent = currencyFormatter.format(cajaTotVal);
+        document.getElementById('cajaEfectivo').textContent = currencyFormatter.format(cajaEfVal);
+        document.getElementById('cajaCbu').textContent = currencyFormatter.format(cajaCbuVal);
+
+        // 3. Álbumes Totales (suma de $25k y $30k)
+        const albumsQty = (albums.qty || 0) + (albums30k.qty || 0);
+        const albumsRev = (albums.revenue || 0) + (albums30k.revenue || 0);
+        document.getElementById('albumsTotal').textContent = albumsQty.toLocaleString('es-AR');
+        document.getElementById('albumsRevenue').textContent = currencyFormatter.format(albumsRev);
+
+        // 3b. Álbumes Reservados
+        const preventaQty = data.preventaQty || 0;
+        document.getElementById('albumsReservados').textContent = preventaQty.toLocaleString('es-AR');
+
+        // 3c. Proyección al Objetivo
+        const proyeccion = data.proyeccion || {};
+        const promedio = proyeccion.promedioSemanal || 0;
+        const semanas = proyeccion.semanasRestantes || 0;
+        const fecha = proyeccion.fechaEstimada || 'N/D';
+
+        const projPromEl = document.getElementById('projPromedio');
+        const projSemEl = document.getElementById('projSemanas');
+        const projFecEl = document.getElementById('projFecha');
+
+        if (projPromEl) projPromEl.textContent = `${promedio.toLocaleString('es-AR')} paq/sem`;
+        if (projSemEl) projSemEl.textContent = `${semanas} sem`;
+        if (projFecEl) projFecEl.textContent = fecha;
+
+        // 4. Lista de Productos
+        const productsList = document.getElementById('productsList');
+        productsList.innerHTML = '';
+
+        const prods = [
+          { name: "📖 Libro / Álbum ($25k)", qty: albums.qty || 0, rev: albums.revenue || 0, color: "text-indigo-400" },
+          { name: "📖 Libro / Álbum $30k", qty: albums30k.qty || 0, rev: albums30k.revenue || 0, color: "text-purple-400" },
+          { name: "✨ 1 Paquete", qty: pack1Qty, rev: paq1.revenue || 0, color: "text-emerald-400" },
+          { name: "📦 Combo 4 Paq.", qty: paq4Qty, rev: paq4.revenue || 0, color: "text-sky-400" },
+          { name: "🔥 Super Pack 10 Paq.", qty: paq10Qty, rev: paq10.revenue || 0, color: "text-amber-400" }
+        ];
+
+        prods.forEach(p => {
+          const item = document.createElement('div');
+          item.className = "bg-slate-950/40 border border-slate-800 rounded-xl p-3 flex justify-between items-center";
+          item.innerHTML = `
+            <div class="space-y-0.5">
+              <span class="text-xs font-bold text-slate-200 block">${p.name}</span>
+              <span class="text-[10px] text-slate-400 font-semibold uppercase tracking-wide">Vendidos: <span class="text-slate-100 font-mono">${p.qty}</span></span>
+            </div>
+            <div class="text-right">
+              <span class="text-xs font-black ${p.color} font-mono">${currencyFormatter.format(p.rev)}</span>
+            </div>
+          `;
+          productsList.appendChild(item);
+        });
+
+        // 5. Detalle de Ventas por Asistente
+        const leaderboard = document.getElementById('sellersLeaderboard');
+        leaderboard.innerHTML = '';
+
+        const vendedoresObj = data.vendedores || {};
+        const sellersArray = Object.entries(vendedoresObj).map(([name, sData]) => ({
+          name,
+          ...(sData || {})
+        })).sort((a, b) => a.name.localeCompare(b.name));
+
+        sellersArray.forEach(seller => {
+          const sEf = seller.efectivo || 0;
+          const sCbu = seller.cbu || 0;
+          const sTot = (sEf + sCbu) > 0 ? (sEf + sCbu) : (seller.total || 0);
+
+          const tr = document.createElement('tr');
+          tr.className = "hover:bg-slate-900/30 transition";
+          tr.innerHTML = `
+            <td class="px-4 py-3.5 font-bold text-slate-100">${seller.name}</td>
+            <td class="px-4 py-3.5 text-center font-bold text-indigo-400 font-mono">${(seller.albums || 0) + (seller.albums30k || 0)}</td>
+            <td class="px-4 py-3.5 text-center font-bold text-emerald-400 font-mono">${seller.paquetes || 0}</td>
+            <td class="px-4 py-3.5 text-right text-[10px] text-slate-400 font-mono">
+              <span class="text-emerald-400">💵 Ef:</span> $${sEf.toLocaleString('es-AR')} 
+              <span class="mx-1">/</span>
+              <span class="text-indigo-400">💳 CBU:</span> $${sCbu.toLocaleString('es-AR')}
+            </td>
+            <td class="px-4 py-3.5 text-right font-black font-outfit text-slate-100 font-mono">${currencyFormatter.format(sTot)}</td>
+          `;
+          leaderboard.appendChild(tr);
+        });
+
+        // 6. Registro de Ventas Recientes
+        const feed = document.getElementById('recentSalesFeed');
+        if (feed) {
+          feed.innerHTML = '';
+          const sales = data.ultimasVentas || [];
+          if (sales.length === 0) {
+            feed.innerHTML = `
+              <tr>
+                <td colspan="5" class="px-4 py-8 text-center text-slate-500 font-medium">No se registraron ventas recientes.</td>
+              </tr>
+            `;
+          } else {
+            sales.forEach(sale => {
+              let timeStr = "";
+              let dateStr = "";
+              if (sale.timestamp) {
+                const dateObj = new Date(sale.timestamp);
+                if (!isNaN(dateObj.getTime())) {
+                  timeStr = dateObj.toLocaleTimeString('es-AR', { hour: '2-digit', minute: '2-digit' });
+                  dateStr = dateObj.toLocaleDateString('es-AR', { day: '2-digit', month: '2-digit' });
+                } else {
+                  dateStr = String(sale.timestamp);
+                }
+              }
+
+              const products = [];
+              if (sale.albums > 0) products.push(`📖 ${sale.albums} Alb($25k)`);
+              if (sale.albums30k > 0) products.push(`📖 ${sale.albums30k} Alb($30k)`);
+              if (sale.paq1 > 0) products.push(`✨ ${sale.paq1} Paq`);
+              if (sale.paq4 > 0) products.push(`📦 ${sale.paq4} Combo4`);
+              if (sale.paq10 > 0) products.push(`🔥 ${sale.paq10} Pack10`);
+              const desglose = products.join(' • ') || 'Sin productos';
+
+              const tr = document.createElement('tr');
+              tr.className = "hover:bg-slate-900/30 transition";
+              tr.innerHTML = `
+                <td class="px-4 py-3 text-slate-400 font-mono text-[10px]">${dateStr} ${timeStr}</td>
+                <td class="px-4 py-3 font-semibold text-slate-200">${sale.vendedor || '-'}</td>
+                <td class="px-4 py-3 font-semibold text-indigo-300 text-[11px]">${desglose}</td>
+                <td class="px-4 py-3 text-slate-350 text-[11px] truncate max-w-[200px]" title="${sale.comprador || ''}">
+                  ${sale.comprador ? `📝 ${sale.comprador}` : '-'}
+                </td>
+                <td class="px-4 py-3 text-right font-bold text-emerald-400 font-mono">${currencyFormatter.format(sale.total || 0)}</td>
+              `;
+              feed.appendChild(tr);
+            });
+          }
+        }
+        
+        // Renderizar gráficos de proporciones
+        renderCharts(data);
+      }
+
+      // Instancias globales de gráficos para poder actualizarlos/destruirlos
+      let productChartInstance = null;
+      let paymentChartInstance = null;
+      let weeklyChartInstance = null;
+
+      // Registrar el plugin de datalabels en Chart.js de forma segura
+      if (typeof Chart !== 'undefined' && typeof ChartDataLabels !== 'undefined') {
+        try {
+          Chart.register(ChartDataLabels);
+        } catch (e) {
+          console.warn("No se pudo registrar ChartDataLabels plugin:", e);
+        }
+      }
+
+      // Dibuja los gráficos del Dashboard
+      function renderCharts(data) {
+        if (typeof Chart === 'undefined') return;
+        const prodsData = (data && data.productos) || {};
+
+        // 1. Gráfico de Curva de Ventas Semanales
+        const weeklyCanvas = document.getElementById('weeklyChart');
+        if (weeklyCanvas) {
+          const weeklyCtx = weeklyCanvas.getContext('2d');
+          const weeklyData = data.ventasSemanales || [];
+          const weeklyLabels = weeklyData.map(w => w.label || w.key);
+          const weeklyPacks = weeklyData.map(w => w.paquetes || 0);
+          const weeklyCum = weeklyData.map(w => w.acumulado || 0);
+
+          if (weeklyChartInstance) {
+            weeklyChartInstance.destroy();
+          }
+
+          const gradientBg = weeklyCtx.createLinearGradient(0, 0, 0, 220);
+          gradientBg.addColorStop(0, 'rgba(99, 102, 241, 0.4)');
+          gradientBg.addColorStop(1, 'rgba(99, 102, 241, 0.0)');
+
+          weeklyChartInstance = new Chart(weeklyCtx, {
+            type: 'line',
+            data: {
+              labels: weeklyLabels.length > 0 ? weeklyLabels : ['Sem 1'],
+              datasets: [
+                {
+                  label: 'Paquetes / Semana',
+                  data: weeklyPacks.length > 0 ? weeklyPacks : [0],
+                  borderColor: '#6366f1',
+                  backgroundColor: gradientBg,
+                  borderWidth: 3,
+                  fill: true,
+                  tension: 0.4,
+                  pointBackgroundColor: '#818cf8',
+                  pointBorderColor: '#0f172a',
+                  pointBorderWidth: 2,
+                  pointRadius: 5,
+                  pointHoverRadius: 7,
+                  yAxisID: 'y'
+                },
+                {
+                  label: 'Acumulado Total',
+                  data: weeklyCum.length > 0 ? weeklyCum : [0],
+                  borderColor: '#10b981',
+                  borderDash: [5, 5],
+                  borderWidth: 2,
+                  fill: false,
+                  tension: 0.4,
+                  pointBackgroundColor: '#34d399',
+                  pointRadius: 4,
+                  yAxisID: 'y1'
+                }
+              ]
+            },
+            options: {
+              responsive: true,
+              maintainAspectRatio: false,
+              interaction: {
+                mode: 'index',
+                intersect: false
+              },
+              plugins: {
+                legend: {
+                  position: 'top',
+                  labels: {
+                    color: '#cbd5e1',
+                    font: { family: 'Plus Jakarta Sans', size: 11 },
+                    padding: 12
+                  }
+                },
+                tooltip: {
+                  callbacks: {
+                    label: function(context) {
+                      const label = context.dataset.label || '';
+                      const value = context.raw || 0;
+                      return ` ${label}: ${value.toLocaleString('es-AR')} paq`;
+                    }
+                  }
+                },
+                datalabels: {
+                  display: false
+                }
+              },
+              scales: {
+                x: {
+                  grid: { color: 'rgba(51, 65, 85, 0.25)' },
+                  ticks: { color: '#94a3b8', font: { size: 10 } }
+                },
+                y: {
+                  type: 'linear',
+                  display: true,
+                  position: 'left',
+                  grid: { color: 'rgba(51, 65, 85, 0.25)' },
+                  ticks: { color: '#818cf8', font: { size: 10 } },
+                  title: { display: true, text: 'Paquetes / Sem', color: '#818cf8', font: { size: 9, weight: 'bold' } }
+                },
+                y1: {
+                  type: 'linear',
+                  display: true,
+                  position: 'right',
+                  grid: { drawOnChartArea: false },
+                  ticks: { color: '#34d399', font: { size: 10 } },
+                  title: { display: true, text: 'Acumulado', color: '#34d399', font: { size: 9, weight: 'bold' } }
+                }
+              }
+            }
+          });
+        }
+
+        // Colores premium acordes al tema (Indigo, Purple, Emerald, Sky, Amber)
+        const colorsProducts = ['#6366f1', '#a855f7', '#10b981', '#0ea5e9', '#f59e0b']; 
+        const colorsPayments = ['#34d399', '#60a5fa']; // emerald light, blue light
+
+        const ctxProduct = document.getElementById('productChart').getContext('2d');
+        const ctxPayment = document.getElementById('paymentChart').getContext('2d');
+
+        // Datos de productos (cantidades en unidades vendidas)
+        const prodData = [
+          (prodsData.albums && prodsData.albums.qty) || 0,
+          (prodsData.albums30k && prodsData.albums30k.qty) || 0,
+          (prodsData.paq1 && prodsData.paq1.qty) || 0,
+          (prodsData.paq4 && prodsData.paq4.qty) || 0,
+          (prodsData.paq10 && prodsData.paq10.qty) || 0
+        ];
+        const prodLabels = ['📖 Álbumes $25k', '📖 Álbumes $30k', '✨ 1 Paquete', '📦 Combo 4', '🔥 Super Pack 10'];
+        const totalProds = prodData.reduce((a, b) => a + b, 0);
+
+        if (productChartInstance) {
+          productChartInstance.destroy();
+        }
+
+        productChartInstance = new Chart(ctxProduct, {
+          type: 'doughnut',
+          data: {
+            labels: prodLabels,
+            datasets: [{
+              data: totalProds > 0 ? prodData : [1],
+              backgroundColor: totalProds > 0 ? colorsProducts : ['#475569'],
+              borderWidth: 1,
+              borderColor: '#0f172a'
+            }]
+          },
+          options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+              legend: {
+                position: 'bottom',
+                labels: {
+                  color: '#cbd5e1',
+                  font: {
+                    family: 'Plus Jakarta Sans',
+                    size: 11
+                  },
+                  padding: 15
+                }
+              },
+              tooltip: {
+                callbacks: {
+                  label: function(context) {
+                    if (totalProds === 0) return ' Sin ventas registradas';
+                    const value = context.raw;
+                    const percent = Math.round((value / totalProds) * 100);
+                    return ` Cantidad: ${value} (${percent}%)`;
+                  }
+                }
+              },
+              datalabels: {
+                color: '#ffffff',
+                font: {
+                  family: 'Plus Jakarta Sans',
+                  weight: 'bold',
+                  size: 12
+                },
+                formatter: (value, ctx) => {
+                  if (totalProds === 0) return '';
+                  const percentage = Math.round((value * 100) / totalProds);
+                  return percentage > 0 ? `${percentage}%` : '';
+                }
+              }
+            },
+            cutout: '65%'
+          }
+        });
+
+        // Datos de formas de cobro (Efectivo vs CBU)
+        const cajaData = (data && data.caja) || {};
+        const payData = [
+          cajaData.efectivo || 0,
+          cajaData.cbu || 0
+        ];
+        const payLabels = ['💵 Efectivo', '💳 CBU / Transf.'];
+        const totalPay = payData.reduce((a, b) => a + b, 0);
+
+        if (paymentChartInstance) {
+          paymentChartInstance.destroy();
+        }
+
+        paymentChartInstance = new Chart(ctxPayment, {
+          type: 'doughnut',
+          data: {
+            labels: payLabels,
+            datasets: [{
+              data: totalPay > 0 ? payData : [1],
+              backgroundColor: totalPay > 0 ? colorsPayments : ['#475569'],
+              borderWidth: 1,
+              borderColor: '#0f172a'
+            }]
+          },
+          options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+              legend: {
+                position: 'bottom',
+                labels: {
+                  color: '#cbd5e1',
+                  font: {
+                    family: 'Plus Jakarta Sans',
+                    size: 11
+                  },
+                  padding: 15
+                }
+              },
+              tooltip: {
+                callbacks: {
+                  label: function(context) {
+                    if (totalPay === 0) return ' Sin ingresos registrados';
+                    const value = context.raw;
+                    const percent = Math.round((value / totalPay) * 100);
+                    return ` Monto: ${currencyFormatter.format(value)} (${percent}%)`;
+                  }
+                }
+              },
+              datalabels: {
+                color: '#ffffff',
+                font: {
+                  family: 'Plus Jakarta Sans',
+                  weight: 'bold',
+                  size: 12
+                },
+                formatter: (value, ctx) => {
+                  if (totalPay === 0) return '';
+                  const percentage = Math.round((value * 100) / totalPay);
+                  return percentage > 0 ? `${percentage}%` : '';
+                }
+              }
+            },
+            cutout: '65%'
+          }
+        });
+      }
+
+      // Generación de Datos de Prueba (Simulación offline)
+      function getMockData() {
+        return {
+          productos: {
+            albums: { qty: 8, revenue: 200000 },
+            albums30k: { qty: 4, revenue: 120000 },
+            paq1: { qty: 25, revenue: 75000 },
+            paq4: { qty: 15, revenue: 150000 },
+            paq10: { qty: 32, revenue: 640000 }
+          },
+          vendedores: {
+            Joaco: { efectivo: 80000, cbu: 120000, total: 200000, albums: 1, albums30k: 0, paquetes: 50 },
+            Fusche: { efectivo: 150000, cbu: 300000, total: 450000, albums: 3, albums30k: 1, paquetes: 120 },
+            MartinC: { efectivo: 25000, cbu: 50000, total: 75000, albums: 1, albums30k: 0, paquetes: 20 },
+            MartinD: { efectivo: 120000, cbu: 180000, total: 300000, albums: 2, albums30k: 1, paquetes: 80 },
+            Fortu: { efectivo: 10000, cbu: 10000, total: 20000, albums: 0, albums30k: 0, paquetes: 5 },
+            Garu: { efectivo: 0, cbu: 0, total: 0, albums: 0, albums30k: 0, paquetes: 0 },
+            Facu: { efectivo: 10000, cbu: 10000, total: 20000, albums: 1, albums30k: 2, paquetes: 5 }
+          },
+          caja: {
+            efectivo: 395000,
+            cbu: 670000,
+            total: 1065000
+          },
+          preventaQty: 18,
+          ventasSemanales: [
+            { key: "2026-W28", label: "Sem 28 (06/07)", paquetes: 1200, revenue: 3600000, acumulado: 1200 },
+            { key: "2026-W29", label: "Sem 29 (13/07)", paquetes: 1850, revenue: 5550000, acumulado: 3050 },
+            { key: "2026-W30", label: "Sem 30 (20/07)", paquetes: 2400, revenue: 7200000, acumulado: 5450 },
+            { key: "2026-W31", label: "Sem 31 (27/07)", paquetes: 2100, revenue: 6300000, acumulado: 7550 }
+          ],
+          proyeccion: {
+            promedioSemanal: 2116,
+            semanasRestantes: 14,
+            fechaEstimada: "07 de Noviembre, 2026",
+            remainingPacks: 29450,
+            totalSemanasActivas: 4
+          },
+          ultimasVentas: [
+            { id: "PV-MOCK-1", timestamp: new Date().toISOString(), vendedor: "Fusche", comprador: "Juan / 6to B", albums: 1, albums30k: 1, paq1: 0, paq4: 0, paq10: 2, total: 95000, efectivo: 55000, cbu: 40000 },
+            { id: "PV-MOCK-2", timestamp: new Date(Date.now() - 300000).toISOString(), vendedor: "Joaco", comprador: "Pedro", albums: 0, albums30k: 0, paq1: 3, paq4: 1, paq10: 1, total: 39000, efectivo: 39000, cbu: 0 }
+          ]
+        };
+      }
+
+      // Descarga el PDF del listado de preventas
+      function downloadReservasPdf() {
+        showToast("Generando reporte PDF...", "loading");
+        if (typeof google !== 'undefined' && google.script && google.script.run) {
+          google.script.run
+            .withSuccessHandler(response => {
+              showToast("✓ PDF generado con éxito", "success");
+              const link = document.createElement('a');
+              link.href = 'data:application/pdf;base64,' + response.pdfBase64;
+              link.download = response.fileName;
+              document.body.appendChild(link);
+              link.click();
+              document.body.removeChild(link);
+            })
+            .withFailureHandler(err => {
+              showToast("❌ Error al exportar PDF: " + err.message, "error");
+            })
+            .exportarPreventaPdf();
+        } else {
+          // Mock Download (Offline)
+          setTimeout(() => {
+            showToast("✓ PDF generado con éxito (Mock)", "success");
+            console.log("Mock PDF download triggered");
+          }, 1000);
+        }
+      }
+
+      // Notificaciones Toast
+      function showToast(message, type = "success") {
+        const toast = document.getElementById('toast');
+        const icon = document.getElementById('toastIcon');
+        const msg = document.getElementById('toastMessage');
+
+        msg.textContent = message;
+
+        if (type === "error") {
+          icon.textContent = "❌";
+          toast.firstElementChild.className = "bg-slate-900 border border-rose-500/50 text-rose-200 px-4 py-3 rounded-lg shadow-2xl flex items-center space-x-2";
+        } else if (type === "success") {
+          icon.textContent = "✓";
+          toast.firstElementChild.className = "bg-slate-900 border border-emerald-500/50 text-emerald-200 px-4 py-3 rounded-lg shadow-2xl flex items-center space-x-2";
+        } else if (type === "loading") {
+          icon.textContent = "🔄";
+          toast.firstElementChild.className = "bg-slate-900 border border-indigo-500/50 text-indigo-200 px-4 py-3 rounded-lg shadow-2xl flex items-center space-x-2";
+        } else {
+          icon.textContent = "ℹ️";
+          toast.firstElementChild.className = "bg-slate-900 border border-slate-700 text-slate-350 px-4 py-3 rounded-lg shadow-2xl flex items-center space-x-2";
+        }
+
+        // Show toast
+        toast.classList.remove('translate-y-20', 'opacity-0');
+        
+        // Hide after 3.5s (except loading)
+        if (type !== "loading") {
+          setTimeout(() => {
+            toast.classList.add('translate-y-20', 'opacity-0');
+          }, 3500);
+        }
+      }
+    </script>
+  </body>
+</html>
