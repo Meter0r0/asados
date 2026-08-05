@@ -1,0 +1,719 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <base target="_top">
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Punto de Venta - ORC</title>
+    <!-- Google Fonts Outfit -->
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+      tailwind.config = {
+        theme: {
+          extend: {
+            fontFamily: {
+              sans: ['Outfit', 'sans-serif'],
+            },
+          },
+        },
+      }
+    </script>
+    <style>
+      body {
+        font-family: 'Outfit', sans-serif;
+        background: radial-gradient(circle at top, #0f172a 0%, #020617 100%);
+      }
+
+      /* Custom scrollbar */
+      ::-webkit-scrollbar {
+        width: 6px;
+        height: 6px;
+      }
+      ::-webkit-scrollbar-track {
+        background: #020617;
+      }
+      ::-webkit-scrollbar-thumb {
+        background: #1e293b;
+        border-radius: 4px;
+      }
+      ::-webkit-scrollbar-thumb:hover {
+        background: #334155;
+      }
+
+      .loader-mini {
+        border: 2px solid rgba(255, 255, 255, 0.1);
+        border-top-color: #6366f1;
+        border-radius: 50%;
+        width: 1rem;
+        height: 1rem;
+        animation: spin 1s linear infinite;
+      }
+      @keyframes spin {
+        0% { transform: rotate(0deg); }
+        100% { transform: rotate(360deg); }
+      }
+
+      select.clean-select {
+        -webkit-appearance: none;
+        -moz-appearance: none;
+        appearance: none;
+        background-image: url("data:image/svg+xml;charset=utf-8,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 20 20'%3E%3Cpath stroke='%2394a3b8' stroke-linecap='round' stroke-linejoin='round' stroke-width='1.5' d='M6 8l4 4 4-4'/%3E%3C/svg%3E");
+        background-position: right 0.75rem center;
+        background-repeat: no-repeat;
+        background-size: 1.25rem;
+        padding-right: 2.25rem;
+      }
+      select option {
+        background-color: #0f172a;
+        color: #f8fafc;
+      }
+
+      /* Colaboradores Badge Styles */
+      .badge-joaco { background-color: rgba(14, 165, 233, 0.15); color: #38bdf8; border: 1px solid rgba(14, 165, 233, 0.3); }
+      .badge-fusche { background-color: rgba(217, 70, 239, 0.15); color: #f472b6; border: 1px solid rgba(217, 70, 239, 0.3); }
+      .badge-martinc { background-color: rgba(16, 185, 129, 0.15); color: #34d399; border: 1px solid rgba(16, 185, 129, 0.3); }
+      .badge-fortu { background-color: rgba(249, 115, 22, 0.15); color: #fb923c; border: 1px solid rgba(249, 115, 22, 0.3); }
+      .badge-garu { background-color: rgba(234, 179, 8, 0.15); color: #facc15; border: 1px solid rgba(234, 179, 8, 0.3); }
+      .badge-martind { background-color: rgba(109, 40, 217, 0.15); color: #ddd6fe; border: 1px solid rgba(139, 92, 246, 0.3); }
+      .badge-facu { background-color: rgba(20, 184, 166, 0.15); color: #2dd4bf; border: 1px solid rgba(20, 184, 166, 0.3); }
+      .badge-empty { background-color: rgba(148, 163, 184, 0.1); color: #94a3b8; border: 1px solid rgba(148, 163, 184, 0.2); }
+
+      /* Forzar alto contraste y legibilidad en inputs y selects en modo oscuro */
+      input[type="text"], input[type="number"], select {
+        background-color: #1e293b !important; /* slate-800 */
+        color: #ffffff !important;             /* blanco */
+        border-color: #475569 !important;     /* slate-600 */
+      }
+      input::placeholder {
+        color: #94a3b8 !important;             /* slate-400 */
+      }
+    </style>
+  </head>
+  <body class="min-h-screen text-slate-100 flex flex-col antialiased">
+    
+    <!-- Toast Notification -->
+    <div id="toast" class="fixed bottom-5 right-5 z-50 transform translate-y-20 opacity-0 transition-all duration-300 pointer-events-none">
+      <div class="bg-slate-900 border border-slate-700 text-slate-100 px-4 py-3 rounded-lg shadow-2xl flex items-center space-x-2">
+        <span id="toastIcon">🔄</span>
+        <span id="toastMessage" class="text-sm font-medium">Cargando...</span>
+      </div>
+    </div>
+
+    <!-- Main Container -->
+    <div class="w-full max-w-4xl mx-auto px-4 py-6 flex-grow flex flex-col space-y-6">
+      
+      <!-- Top Navigation & Title -->
+      <div class="flex flex-col sm:flex-row justify-between items-center bg-slate-900/70 border border-slate-700 backdrop-blur-md rounded-2xl p-5 gap-4 shadow-lg">
+        <div class="text-center sm:text-left">
+          <div class="flex items-center justify-center sm:justify-start space-x-2">
+            <span class="text-3xl">🛒</span>
+            <h1 class="text-xl font-bold tracking-tight text-white">Punto de Venta</h1>
+          </div>
+          <p class="text-slate-300 text-xs mt-0.5 font-medium">Venta rápida de álbumes y paquetes de figuritas</p>
+        </div>
+        <div class="flex space-x-2">
+          <a id="btnAsistencia" href="#" target="_top" class="inline-flex items-center space-x-1.5 px-4 py-2 bg-slate-800 hover:bg-slate-700 border border-slate-600 text-slate-200 rounded-xl text-xs font-semibold transition">
+            <span>📅 Asistencia</span>
+          </a>
+          <a id="btnDashboard" href="#" target="_top" class="inline-flex items-center space-x-1.5 px-4 py-2 bg-slate-800 hover:bg-slate-700 border border-slate-600 text-slate-200 rounded-xl text-xs font-semibold transition">
+            <span>📊 Dashboard</span>
+          </a>
+          <a id="btnHistorial" href="#" target="_top" class="inline-flex items-center space-x-1.5 px-4 py-2 bg-slate-800 hover:bg-slate-700 border border-slate-600 text-slate-200 rounded-xl text-xs font-semibold transition">
+            <span>📋 Historial</span>
+          </a>
+          <a id="btnPreventa" href="#" target="_top" class="inline-flex items-center space-x-1.5 px-4 py-2 bg-slate-800 hover:bg-slate-700 border border-slate-600 text-slate-200 rounded-xl text-xs font-semibold transition">
+            <span>📢 Reserva de Álbumes</span>
+          </a>
+        </div>
+      </div>
+
+      <!-- Seller Selection (Vendedor) -->
+      <div class="bg-slate-900/50 border border-slate-700/60 backdrop-blur-md rounded-2xl p-5 shadow-lg">
+        <label for="vendedor" class="block text-xs font-semibold text-slate-300 uppercase tracking-wider mb-2">Identificación del Vendedor</label>
+        <div class="relative">
+          <select id="vendedor" required onchange="onVendedorChange()" class="clean-select block w-full px-4 py-3 bg-slate-800 border border-slate-600 text-slate-100 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500 text-sm font-semibold">
+            <option value="" disabled selected>Selecciona tu nombre</option>
+            <option value="Joaco">👤 Joaco</option>
+            <option value="Fusche">👤 Fusche</option>
+            <option value="MartinC">👤 MartinC</option>
+            <option value="MartinD">👤 MartinD</option>
+            <option value="Fortu">👤 Fortu</option>
+            <option value="Garu">👤 Garu</option>
+            <option value="Facu">👤 Facu</option>
+          </select>
+        </div>
+      </div>
+
+      <!-- Main Form (Active only when seller is selected) -->
+      <div id="formSection" class="opacity-70 pointer-events-none transition-all duration-300 flex flex-col space-y-6">
+        
+        <form id="ventaForm" class="grid grid-cols-1 md:grid-cols-3 gap-6">
+          <input type="hidden" id="recordId">
+
+          <!-- Left Column: Products Counter (2/3 width on desktop) -->
+          <div class="md:col-span-2 space-y-4">
+            <h2 class="text-xs font-semibold text-slate-300 uppercase tracking-wider pl-1">Selección de Productos</h2>
+            
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <!-- Producto 1: Album -->
+              <div class="bg-slate-900/70 border border-slate-700 rounded-2xl p-4 flex flex-col justify-between space-y-3 hover:border-slate-600 transition">
+                <div class="flex justify-between items-start">
+                  <div>
+                    <h3 class="font-bold text-white text-sm">📖 Libro / Álbum</h3>
+                    <p class="text-[10px] text-indigo-300 font-semibold mt-0.5">Precio Unitario</p>
+                  </div>
+                  <span class="text-sm font-extrabold text-emerald-300">$25.000</span>
+                </div>
+                <div class="flex items-center justify-between pt-2 border-t border-slate-700/50">
+                  <span class="text-xs text-slate-200">Cantidad</span>
+                  <div class="flex items-center space-x-2">
+                    <button type="button" onclick="adjustCount('albums', -1)" class="w-8 h-8 rounded-lg bg-slate-800 border border-slate-600 text-white font-bold hover:bg-slate-700 transition flex items-center justify-center select-none text-base">-</button>
+                    <input type="number" id="albums" name="albums" min="0" value="0" oninput="recalculateTotal()" class="w-14 h-8 text-center bg-slate-800 border border-slate-600 text-white font-bold rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 text-sm [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none">
+                    <button type="button" onclick="adjustCount('albums', 1)" class="w-8 h-8 rounded-lg bg-slate-800 border border-slate-600 text-white font-bold hover:bg-slate-700 transition flex items-center justify-center select-none text-base">+</button>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Producto 1b: Album 30k -->
+              <div class="bg-slate-900/70 border border-slate-700 rounded-2xl p-4 flex flex-col justify-between space-y-3 hover:border-slate-600 transition">
+                <div class="flex justify-between items-start">
+                  <div>
+                    <h3 class="font-bold text-white text-sm">📖 Libro / Álbum $30k</h3>
+                    <p class="text-[10px] text-indigo-300 font-semibold mt-0.5">Precio Unitario</p>
+                  </div>
+                  <span class="text-sm font-extrabold text-emerald-300">$30.000</span>
+                </div>
+                <div class="flex items-center justify-between pt-2 border-t border-slate-700/50">
+                  <span class="text-xs text-slate-200">Cantidad</span>
+                  <div class="flex items-center space-x-2">
+                    <button type="button" onclick="adjustCount('albums30k', -1)" class="w-8 h-8 rounded-lg bg-slate-800 border border-slate-600 text-white font-bold hover:bg-slate-700 transition flex items-center justify-center select-none text-base">-</button>
+                    <input type="number" id="albums30k" name="albums30k" min="0" value="0" oninput="recalculateTotal()" class="w-14 h-8 text-center bg-slate-800 border border-slate-600 text-white font-bold rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 text-sm [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none">
+                    <button type="button" onclick="adjustCount('albums30k', 1)" class="w-8 h-8 rounded-lg bg-slate-800 border border-slate-600 text-white font-bold hover:bg-slate-700 transition flex items-center justify-center select-none text-base">+</button>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Producto 2: 1 Paquete -->
+              <div class="bg-slate-900/70 border border-slate-700 rounded-2xl p-4 flex flex-col justify-between space-y-3 hover:border-slate-600 transition">
+                <div class="flex justify-between items-start">
+                  <div>
+                    <h3 class="font-bold text-white text-sm">✨ 1 Paquete</h3>
+                    <p class="text-[10px] text-indigo-300 font-semibold mt-0.5">Precio Unitario</p>
+                  </div>
+                  <span class="text-sm font-extrabold text-emerald-300">$3.000</span>
+                </div>
+                <div class="flex items-center justify-between pt-2 border-t border-slate-700/50">
+                  <span class="text-xs text-slate-200">Cantidad</span>
+                  <div class="flex items-center space-x-2">
+                    <button type="button" onclick="adjustCount('paq1', -1)" class="w-8 h-8 rounded-lg bg-slate-800 border border-slate-600 text-white font-bold hover:bg-slate-700 transition flex items-center justify-center select-none text-base">-</button>
+                    <input type="number" id="paq1" name="paq1" min="0" value="0" oninput="recalculateTotal()" class="w-14 h-8 text-center bg-slate-800 border border-slate-600 text-white font-bold rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 text-sm [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none">
+                    <button type="button" onclick="adjustCount('paq1', 1)" class="w-8 h-8 rounded-lg bg-slate-800 border border-slate-600 text-white font-bold hover:bg-slate-700 transition flex items-center justify-center select-none text-base">+</button>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Producto 3: 4 Paquetes -->
+              <div class="bg-slate-900/70 border border-slate-700 rounded-2xl p-4 flex flex-col justify-between space-y-3 hover:border-slate-600 transition">
+                <div class="flex justify-between items-start">
+                  <div>
+                    <h3 class="font-bold text-white text-sm">📦 Combo 4 Paquetes</h3>
+                    <p class="text-[10px] text-indigo-300 font-semibold mt-0.5">Precio del Pack</p>
+                  </div>
+                  <span class="text-sm font-extrabold text-emerald-300">$10.000</span>
+                </div>
+                <div class="flex items-center justify-between pt-2 border-t border-slate-700/50">
+                  <span class="text-xs text-slate-200">Cantidad</span>
+                  <div class="flex items-center space-x-2">
+                    <button type="button" onclick="adjustCount('paq4', -1)" class="w-8 h-8 rounded-lg bg-slate-800 border border-slate-600 text-white font-bold hover:bg-slate-700 transition flex items-center justify-center select-none text-base">-</button>
+                    <input type="number" id="paq4" name="paq4" min="0" value="0" oninput="recalculateTotal()" class="w-14 h-8 text-center bg-slate-800 border border-slate-600 text-white font-bold rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 text-sm [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none">
+                    <button type="button" onclick="adjustCount('paq4', 1)" class="w-8 h-8 rounded-lg bg-slate-800 border border-slate-600 text-white font-bold hover:bg-slate-700 transition flex items-center justify-center select-none text-base">+</button>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Producto 4: 10 Paquetes -->
+              <div class="bg-slate-900/70 border border-slate-700 rounded-2xl p-4 flex flex-col justify-between space-y-3 hover:border-slate-600 transition">
+                <div class="flex justify-between items-start">
+                  <div>
+                    <h3 class="font-bold text-white text-sm">🔥 Super Pack 10 Paq.</h3>
+                    <p class="text-[10px] text-indigo-300 font-semibold mt-0.5">Precio del Pack</p>
+                  </div>
+                  <span class="text-sm font-extrabold text-emerald-300">$20.000</span>
+                </div>
+                <div class="flex items-center justify-between pt-2 border-t border-slate-700/50">
+                  <span class="text-xs text-slate-200">Cantidad</span>
+                  <div class="flex items-center space-x-2">
+                    <button type="button" onclick="adjustCount('paq10', -1)" class="w-8 h-8 rounded-lg bg-slate-800 border border-slate-600 text-white font-bold hover:bg-slate-700 transition flex items-center justify-center select-none text-base">-</button>
+                    <input type="number" id="paq10" name="paq10" min="0" value="0" oninput="recalculateTotal()" class="w-14 h-8 text-center bg-slate-800 border border-slate-600 text-white font-bold rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 text-sm [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none">
+                    <button type="button" onclick="adjustCount('paq10', 1)" class="w-8 h-8 rounded-lg bg-slate-800 border border-slate-600 text-white font-bold hover:bg-slate-700 transition flex items-center justify-center select-none text-base">+</button>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- Observaciones -->
+            <div class="bg-slate-900/60 border border-slate-700 rounded-2xl p-4 space-y-2">
+              <label for="comprador" class="block text-xs font-semibold text-slate-300 uppercase tracking-wider">Observaciones</label>
+              <input type="text" id="comprador" placeholder="Ej: F. Pérez / 7ma A / Seña" class="block w-full px-3 py-2.5 bg-slate-800 border border-slate-600 text-slate-100 rounded-xl placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-indigo-500 sm:text-xs font-medium">
+            </div>
+          </div>
+
+          <!-- Right Column: Totalizer & Payment (1/3 width on desktop) -->
+          <div class="space-y-4">
+            <h2 class="text-xs font-semibold text-slate-300 uppercase tracking-wider pl-1">Caja y Cobro</h2>
+
+            <div class="bg-slate-900/80 border border-slate-700 backdrop-blur-md rounded-2xl p-5 flex flex-col space-y-4 shadow-xl">
+              <!-- Giant Total Display -->
+              <div class="text-center py-4 bg-slate-950/60 border border-slate-850 rounded-2xl">
+                <span class="text-[10px] text-slate-400 font-semibold uppercase tracking-widest block">Total Cobrado (Efectivo + CBU)</span>
+                <span id="totalDisplay" class="text-4xl font-black text-indigo-300 font-mono tracking-tight">$0</span>
+                <span id="suggestedDisplay" class="hidden text-[10px] text-indigo-400 font-semibold block mt-1">Sugerido por productos: $0</span>
+                <input type="hidden" id="total" name="total" value="0">
+              </div>
+
+              <!-- Payment Inputs -->
+              <div class="space-y-3">
+                <!-- Cobrado Efectivo -->
+                <div>
+                  <div class="flex justify-between items-center mb-1">
+                    <label for="efectivo" class="text-[10px] font-bold text-slate-300 uppercase tracking-wider">Monto en Efectivo</label>
+                    <button type="button" onclick="fillPayment('efectivo')" class="text-[9px] text-indigo-300 hover:text-indigo-200 font-bold uppercase tracking-wide">Paga todo</button>
+                  </div>
+                  <div class="relative rounded-xl shadow-sm">
+                    <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                      <span class="text-slate-400 text-xs">$</span>
+                    </div>
+                    <input type="number" id="efectivo" min="0" step="100" oninput="updateTotalFromPayments()" class="block w-full pl-7 pr-3 py-2 bg-slate-800 border border-slate-600 text-slate-100 rounded-xl placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-indigo-500 text-xs font-semibold" placeholder="0">
+                  </div>
+                </div>
+
+                <!-- Monto Contado en Efectivo -->
+                <div>
+                  <div class="flex justify-between items-center mb-1">
+                    <label for="contado" class="text-[10px] font-bold text-slate-300 uppercase tracking-wider">Monto Contado en Efectivo</label>
+                  </div>
+                  <div class="relative rounded-xl shadow-sm">
+                    <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                      <span class="text-slate-400 text-xs">$</span>
+                    </div>
+                    <input type="number" id="contado" min="0" step="100" oninput="updateDifference()" class="block w-full pl-7 pr-3 py-2 bg-slate-800 border border-slate-600 text-slate-100 rounded-xl placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-indigo-500 text-xs font-semibold" placeholder="0">
+                  </div>
+                </div>
+
+                <!-- Diferencia Efectivo -->
+                <div>
+                  <label class="block text-[10px] font-bold text-slate-300 uppercase tracking-wider mb-1">Diferencia Efectivo</label>
+                  <div class="px-3 py-2 bg-slate-950/60 border border-slate-800 rounded-xl flex justify-between items-center text-xs font-bold font-mono">
+                    <span class="text-slate-400">Balance:</span>
+                    <span id="diferenciaDisplay" class="text-emerald-400 font-extrabold">$0</span>
+                  </div>
+                </div>
+
+                <!-- Cobrado CBU -->
+                <div>
+                  <div class="flex justify-between items-center mb-1">
+                    <label for="cbu" class="text-[10px] font-bold text-slate-300 uppercase tracking-wider">Monto Transferencia (CBU)</label>
+                    <button type="button" onclick="fillPayment('cbu')" class="text-[9px] text-indigo-300 hover:text-indigo-200 font-bold uppercase tracking-wide">Paga todo</button>
+                  </div>
+                  <div class="relative rounded-xl shadow-sm">
+                    <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                      <span class="text-slate-400 text-xs">$</span>
+                    </div>
+                    <input type="number" id="cbu" min="0" step="100" oninput="updateTotalFromPayments()" class="block w-full pl-7 pr-3 py-2 bg-slate-800 border border-slate-600 text-slate-100 rounded-xl placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-indigo-500 text-xs font-semibold" placeholder="0">
+                  </div>
+                </div>
+              </div>
+
+              <!-- Action buttons -->
+              <div class="space-y-2 pt-2">
+                <button type="submit" id="submitBtn" class="w-full flex justify-center items-center py-3 px-4 bg-indigo-600 hover:bg-indigo-700 disabled:opacity-50 text-white text-xs font-bold uppercase tracking-wider rounded-xl focus:outline-none transition shadow-lg shadow-indigo-950/40">
+                  <span id="submitBtnText">Registrar Venta</span>
+                  <div id="submitBtnLoader" class="loader-mini !border-t-white ml-2 hidden"></div>
+                </button>
+                <button type="button" id="cancelEditBtn" onclick="cancelEditing()" class="w-full py-2.5 border border-slate-700 text-slate-350 hover:text-white text-xs font-bold uppercase tracking-wider rounded-xl hover:bg-slate-800 focus:outline-none transition hidden">
+                  Cancelar Edición
+                </button>
+              </div>
+            </div>
+          </div>
+        </form>
+
+      </div>
+
+      <!-- Footer Info -->
+      <div class="text-center py-2">
+        <p class="text-slate-600 text-[10px]">Vendedores de Figuritas ORC • Punto de Venta v1.0</p>
+      </div>
+
+    </div>
+
+    <!-- Logic Script -->
+    <script>
+      // Parámetros cargados desde la URL por Apps Script
+      const vendedorUrlParam = "<?= vendedor ?>";
+      const editUrlParam = "<?= editId ?>";
+
+      // Precios de Productos
+      const PRECIOS = {
+        albums: 25000,
+        albums30k: 30000,
+        paq1: 3000,
+        paq4: 10000,
+        paq10: 20000
+      };
+
+      // Estado local
+      let isEditing = false;
+      let webAppUrl = "";
+
+      window.addEventListener('DOMContentLoaded', () => {
+        setupNavUrls();
+        
+        // Si viene el vendedor por parámetro en la URL, pre-seleccionarlo
+        if (vendedorUrlParam) {
+          const selectEl = document.getElementById('vendedor');
+          if (selectEl) {
+            const exists = Array.from(selectEl.options).some(opt => opt.value === vendedorUrlParam);
+            if (exists) {
+              selectEl.value = vendedorUrlParam;
+              onVendedorChange();
+            }
+          }
+        }
+
+        // Si viene el parámetro para editar un registro, cargarlo en el formulario
+        if (editUrlParam) {
+          loadSaleToEdit(editUrlParam);
+        }
+      });
+
+      // Configura los enlaces de navegación a partir de la URL de publicación de Apps Script
+      function setupNavUrls() {
+        if (typeof google !== 'undefined' && google.script && google.script.run) {
+          google.script.run
+            .withSuccessHandler(url => {
+              webAppUrl = url;
+              document.getElementById('btnAsistencia').href = url + '?page=asistencia';
+              document.getElementById('btnDashboard').href = url + '?page=dashboard';
+              document.getElementById('btnHistorial').href = url + '?page=historial';
+              document.getElementById('btnPreventa').href = 'https://script.google.com/macros/s/AKfycbz-fgBkbynC_yw8R8t2bs7xNfpHJI4JwsE0pjtQD2Zthd9uqtNB22HKFyuurwZxqakF/exec';
+            })
+            .getWebAppUrl();
+        }
+      }
+
+      // Se ejecuta cuando cambia la selección de vendedor
+      function onVendedorChange() {
+        const vendedorVal = document.getElementById('vendedor').value;
+        const formSection = document.getElementById('formSection');
+
+        if (vendedorVal) {
+          formSection.classList.remove('opacity-70', 'pointer-events-none');
+          cancelEditing(); // Salir de cualquier edición previa
+        } else {
+          formSection.classList.add('opacity-70', 'pointer-events-none');
+        }
+      }
+
+      // Ajusta la cantidad de un producto
+      function adjustCount(productId, delta) {
+        const inputEl = document.getElementById(productId);
+        if (!inputEl) return;
+
+        let val = parseInt(inputEl.value) || 0;
+        val = Math.max(0, val + delta);
+
+        inputEl.value = val;
+
+        recalculateTotal();
+      }
+
+      // Calcula la suma sugerida según productos seleccionados
+      function getSuggestedTotal() {
+        const albums = parseInt(document.getElementById('albums').value) || 0;
+        const albums30k = parseInt(document.getElementById('albums30k').value) || 0;
+        const paq1 = parseInt(document.getElementById('paq1').value) || 0;
+        const paq4 = parseInt(document.getElementById('paq4').value) || 0;
+        const paq10 = parseInt(document.getElementById('paq10').value) || 0;
+
+        return (albums * PRECIOS.albums) + 
+               (albums30k * PRECIOS.albums30k) + 
+               (paq1 * PRECIOS.paq1) + 
+               (paq4 * PRECIOS.paq4) + 
+               (paq10 * PRECIOS.paq10);
+      }
+
+      // Recalcula el total acumulado compuesto exclusivamente por la suma de Efectivo + CBU
+      function updateTotalFromPayments() {
+        const efectivo = parseInt(document.getElementById('efectivo').value) || 0;
+        const cbu = parseInt(document.getElementById('cbu').value) || 0;
+        const total = efectivo + cbu;
+
+        document.getElementById('total').value = total;
+        
+        const currencyFormatter = new Intl.NumberFormat('es-AR', {
+          style: 'currency',
+          currency: 'ARS',
+          minimumFractionDigits: 0
+        });
+        document.getElementById('totalDisplay').textContent = currencyFormatter.format(total);
+
+        // Mostrar u ocultar el total sugerido según productos seleccionados
+        const suggested = getSuggestedTotal();
+        const suggestedEl = document.getElementById('suggestedDisplay');
+        if (suggestedEl) {
+          if (suggested > 0) {
+            suggestedEl.textContent = `Sugerido por productos: ${currencyFormatter.format(suggested)}`;
+            suggestedEl.classList.remove('hidden');
+          } else {
+            suggestedEl.classList.add('hidden');
+          }
+        }
+
+        updateDifference();
+      }
+
+      function recalculateTotal() {
+        updateTotalFromPayments();
+      }
+
+      // Rellena la totalidad del pago en pesos o transferencia
+      function fillPayment(method) {
+        const suggested = getSuggestedTotal();
+        const efectivoInput = document.getElementById('efectivo');
+        const cbuInput = document.getElementById('cbu');
+
+        if (method === 'efectivo') {
+          efectivoInput.value = suggested > 0 ? suggested : '';
+          cbuInput.value = '';
+        } else if (method === 'cbu') {
+          cbuInput.value = suggested > 0 ? suggested : '';
+          efectivoInput.value = '';
+        }
+        updateTotalFromPayments();
+      }
+
+      // Sale del modo edición limpiando el formulario
+      function cancelEditing() {
+        isEditing = false;
+        document.getElementById('recordId').value = '';
+        document.getElementById('comprador').value = '';
+        
+        const products = ['albums', 'albums30k', 'paq1', 'paq4', 'paq10'];
+        products.forEach(p => {
+          document.getElementById(p).value = 0;
+        });
+
+        document.getElementById('efectivo').value = '';
+        document.getElementById('contado').value = '';
+        document.getElementById('cbu').value = '';
+        
+        updateTotalFromPayments();
+
+        document.getElementById('submitBtnText').textContent = "Registrar Venta";
+        document.getElementById('cancelEditBtn').classList.add('hidden');
+      }
+
+      // Carga un registro específico para edición
+      function loadSaleToEdit(saleId) {
+        showToast("Cargando venta para editar...", "loading");
+        if (typeof google !== 'undefined' && google.script && google.script.run) {
+          google.script.run
+            .withSuccessHandler(sale => {
+              if (sale) {
+                // Rellenar formulario
+                document.getElementById('recordId').value = sale.id;
+                document.getElementById('comprador').value = sale.comprador || '';
+                
+                document.getElementById('albums').value = sale.albums || 0;
+                document.getElementById('albums30k').value = sale.albums30k || 0;
+                document.getElementById('paq1').value = sale.paq1 || 0;
+                document.getElementById('paq4').value = sale.paq4 || 0;
+                document.getElementById('paq10').value = sale.paq10 || 0;
+
+                document.getElementById('efectivo').value = sale.efectivo || '';
+                document.getElementById('contado').value = sale.contado || '';
+                document.getElementById('cbu').value = sale.cbu || '';
+
+                updateTotalFromPayments();
+
+                isEditing = true;
+                document.getElementById('submitBtnText').textContent = "Guardar Cambios";
+                document.getElementById('cancelEditBtn').classList.remove('hidden');
+                
+                showToast("✓ Venta cargada para editar", "success");
+              } else {
+                showToast("❌ No se encontró la venta", "error");
+              }
+            })
+            .withFailureHandler(err => {
+              showToast("❌ Error al cargar la venta: " + err.message, "error");
+            })
+            .getVentaPorId(saleId);
+        } else {
+          // Offline Mock
+          setTimeout(() => {
+            document.getElementById('recordId').value = saleId;
+            document.getElementById('comprador').value = "Mock Comprador";
+            document.getElementById('albums').value = 1;
+            document.getElementById('albums30k').value = 0;
+            document.getElementById('efectivo').value = 25000;
+            document.getElementById('contado').value = 25000;
+            updateTotalFromPayments();
+            isEditing = true;
+            document.getElementById('submitBtnText').textContent = "Guardar Cambios (Mock)";
+            document.getElementById('cancelEditBtn').classList.remove('hidden');
+            showToast("✓ Venta cargada (Mock)", "success");
+          }, 800);
+        }
+      }
+
+      // Calcula y visualiza la diferencia del efectivo contado
+      function updateDifference() {
+        const efectivo = parseInt(document.getElementById('efectivo').value) || 0;
+        const contado = parseInt(document.getElementById('contado').value) || 0;
+        const diff = contado - efectivo;
+
+        const diffEl = document.getElementById('diferenciaDisplay');
+        if (diffEl) {
+          const formatted = new Intl.NumberFormat('es-AR', {
+            style: 'currency',
+            currency: 'ARS',
+            minimumFractionDigits: 0
+          }).format(diff);
+          
+          diffEl.textContent = formatted;
+          
+          if (diff === 0) {
+            diffEl.className = "text-emerald-400 font-extrabold";
+          } else if (diff < 0) {
+            diffEl.className = "text-rose-400 font-extrabold";
+          } else {
+            diffEl.className = "text-amber-400 font-extrabold";
+          }
+        }
+      }
+
+      // Envío del formulario
+      document.getElementById('ventaForm').addEventListener('submit', (e) => {
+        e.preventDefault();
+
+        const recordId = document.getElementById('recordId').value;
+        const seller = document.getElementById('vendedor').value; // avoid shadowed variable
+        const comprador = document.getElementById('comprador').value.trim();
+        const albums = parseInt(document.getElementById('albums').value) || 0;
+        const albums30k = parseInt(document.getElementById('albums30k').value) || 0;
+        const paq1 = parseInt(document.getElementById('paq1').value) || 0;
+        const paq4 = parseInt(document.getElementById('paq4').value) || 0;
+        const paq10 = parseInt(document.getElementById('paq10').value) || 0;
+        const efectivo = parseInt(document.getElementById('efectivo').value) || 0;
+        const cbu = parseInt(document.getElementById('cbu').value) || 0;
+        const contado = parseInt(document.getElementById('contado').value) || 0;
+        const total = efectivo + cbu;
+
+        document.getElementById('total').value = total;
+
+        // Validaciones básicas
+        if (!seller) {
+          showToast("❌ Debes seleccionar un vendedor en la parte superior", "error");
+          return;
+        }
+
+        if (total === 0) {
+          showToast("❌ Debes ingresar un monto en Efectivo o Transferencia (CBU)", "error");
+          return;
+        }
+
+        setFormLoading(true);
+        showToast("Registrando venta en la planilla...", "loading");
+
+        if (typeof google !== 'undefined' && google.script && google.script.run) {
+          google.script.run
+            .withSuccessHandler(response => {
+              setFormLoading(false);
+              const wasEditing = isEditing;
+              cancelEditing();
+              showToast("✓ Venta registrada con éxito", "success");
+              if (wasEditing) {
+                setTimeout(() => {
+                  const url = (webAppUrl || '') + '?page=historial&vendedor=' + encodeURIComponent(seller);
+                  window.open(url, '_top');
+                }, 800);
+              }
+            })
+            .withFailureHandler(err => {
+              setFormLoading(false);
+              showToast("❌ Error al registrar venta: " + err.message, "error");
+            })
+            .guardarVentaPuntoVenta(recordId, seller, comprador, albums, albums30k, paq1, paq4, paq10, total, efectivo, cbu, contado);
+        } else {
+          // Offline Mock
+          setTimeout(() => {
+            setFormLoading(false);
+            const wasEditing = isEditing;
+            cancelEditing();
+            showToast("✓ Venta registrada con éxito (Mock)", "success");
+            if (wasEditing) {
+              const url = '?page=historial&vendedor=' + encodeURIComponent(seller);
+              console.log("Redirecting (Mock) to: " + url);
+            }
+          }, 800);
+        }
+      });
+
+      // Maneja el estado visual de carga en el formulario
+      function setFormLoading(isLoading) {
+        const btn = document.getElementById('submitBtn');
+        const text = document.getElementById('submitBtnText');
+        const loader = document.getElementById('submitBtnLoader');
+        const inputs = document.querySelectorAll('#ventaForm input, #ventaForm button:not([type="button"])');
+
+        btn.disabled = isLoading;
+        text.classList.toggle('hidden', isLoading);
+        loader.classList.toggle('hidden', !isLoading);
+
+        inputs.forEach(el => {
+          el.disabled = isLoading;
+          if (isLoading) el.classList.add('opacity-50');
+          else el.classList.remove('opacity-50');
+        });
+      }
+
+      // Muestra notificaciones flotantes (toast)
+      let toastTimeout;
+      function showToast(message, type = "success") {
+        const toast = document.getElementById('toast');
+        const toastIcon = document.getElementById('toastIcon');
+        const toastMessage = document.getElementById('toastMessage');
+
+        if (toastTimeout) {
+          clearTimeout(toastTimeout);
+        }
+
+        // Definir icono según el tipo
+        if (type === "loading") {
+          toastIcon.innerHTML = `<div class="loader-mini"></div>`;
+        } else if (type === "success") {
+          toastIcon.innerHTML = "✅";
+        } else if (type === "error") {
+          toastIcon.innerHTML = "❌";
+        } else {
+          toastIcon.innerHTML = "ℹ️";
+        }
+
+        toastMessage.textContent = message;
+        
+        toast.classList.remove('translate-y-20', 'opacity-0');
+        toast.classList.add('translate-y-0', 'opacity-100');
+
+        if (type !== "loading") {
+          toastTimeout = setTimeout(() => {
+            toast.classList.remove('translate-y-0', 'opacity-100');
+            toast.classList.add('translate-y-20', 'opacity-0');
+          }, 3500);
+        }
+      }
+    </script>
+  </body>
+</html>
