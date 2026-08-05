@@ -849,7 +849,7 @@ function getDashboardData() {
             };
           }
           semanasMap[weekInfo.key].paquetes += paquetesFila;
-          semanasMap[weekInfo.key].revenue += total;
+          semanasMap[weekInfo.key].revenue += totalVenta;
         }
       }
     }
