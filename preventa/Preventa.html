@@ -143,7 +143,7 @@
 
           <!-- Categoria/Grupo -->
           <div>
-            <label for="categoria" class="block text-[10px] font-extrabold text-slate-350 uppercase tracking-wider mb-1.5">Categoría / División *</label>
+            <label for="categoria" id="categoriaLabel" class="block text-[10px] font-extrabold text-slate-350 uppercase tracking-wider mb-1.5">Categoría / División *</label>
             <select id="categoria" required class="block w-full px-3 py-2.5 bg-slate-800 border border-slate-700 text-slate-100 rounded-xl focus:outline-none focus:ring-2 focus:ring-orange-500 text-xs font-semibold appearance-none bg-[url('data:image/svg+xml;charset=utf-8,%3Csvg xmlns=\'http://www.w3.org/2000/svg\' fill=\'none\' viewBox=\'0 0 20 20\'%3E%3Cpath stroke=\'%2394a3b8\' stroke-linecap=\'round\' stroke-linejoin=\'round\' stroke-width=\'1.5\' d=\'M6 8l4 4 4-4\'/%3E%3C/svg%3E')] bg-[position:right_0.75rem_center] bg-no-repeat bg-[size:1.25rem] pr-10">
               <option value="" disabled selected class="bg-slate-900 text-slate-400">Seleccioná tu categoría</option>
               <option value="PS A" class="bg-slate-900 text-white">PS A</option>
@@ -184,7 +184,7 @@
 
           <!-- Telefono -->
           <div>
-            <label for="telefono" class="block text-[10px] font-extrabold text-slate-355 uppercase tracking-wider mb-1.5">Teléfono de Contacto *</label>
+            <label for="telefono" id="telefonoLabel" class="block text-[10px] font-extrabold text-slate-355 uppercase tracking-wider mb-1.5">Teléfono de Contacto *</label>
             <input type="text" id="telefono" required placeholder="Ej: 11 1234-5678" class="block w-full px-3 py-2.5 bg-slate-800 border border-slate-700 text-slate-100 rounded-xl focus:outline-none focus:ring-2 focus:ring-orange-500 text-xs font-semibold">
           </div>
 
@@ -240,7 +240,7 @@
 
           <!-- Carga de Comprobante -->
           <div>
-            <label class="block text-[10px] font-extrabold text-slate-355 uppercase tracking-wider mb-1.5">Comprobante de Transferencia (Foto o PDF) *</label>
+            <label id="comprobanteLabel" class="block text-[10px] font-extrabold text-slate-355 uppercase tracking-wider mb-1.5">Comprobante de Transferencia (Foto o PDF) *</label>
             <div class="relative flex items-center justify-center bg-slate-800/50 border-2 border-dashed border-slate-700 hover:border-orange-500/50 rounded-2xl p-4 transition-all duration-300 group cursor-pointer">
               <input type="file" id="comprobante" accept="image/*,application/pdf" required onchange="handleFileSelected()" class="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-10">
               <div class="text-center space-y-1.5 pointer-events-none">
@@ -322,6 +322,11 @@
         const albumSection = document.getElementById('albumSection');
         const figuSection = document.getElementById('figuSection');
 
+        const nombreInput = document.getElementById('nombre');
+        const categoriaInput = document.getElementById('categoria');
+        const telefonoInput = document.getElementById('telefono');
+        const comprobanteInput = document.getElementById('comprobante');
+
         if (tipo === 'figugigante') {
           btnAlbum.className = 'toggle-btn';
           btnFigu.className = 'toggle-btn active-figu';
@@ -331,9 +336,17 @@
           document.getElementById('headerIcon').textContent = '🦸';
           document.getElementById('mainTitle').textContent = 'Pedido de FiguGigante';
           document.getElementById('formTitle').textContent = 'Encargá tu FiguGigante';
-          document.getElementById('formSubtitle').textContent = 'Elegí las figuritas a ampliar, completá tus datos y subí el comprobante de transferencia.';
-          document.getElementById('nombreLabel').textContent = 'Nombre de Contacto *';
+          document.getElementById('formSubtitle').textContent = 'Elegí las figuritas a ampliar. Los datos de contacto y el comprobante son opcionales.';
+          document.getElementById('nombreLabel').textContent = 'Nombre de Contacto';
+          document.getElementById('categoriaLabel').textContent = 'Categoría / División';
+          document.getElementById('telefonoLabel').textContent = 'Teléfono de Contacto';
+          document.getElementById('comprobanteLabel').textContent = 'Comprobante de Transferencia (Foto o PDF)';
           document.getElementById('submitBtnText').textContent = 'Encargar FiguGigante';
+
+          nombreInput.required = false;
+          categoriaInput.required = false;
+          telefonoInput.required = false;
+          comprobanteInput.required = false;
 
           if (document.getElementById('figuritasContainer').children.length === 0) {
             addFiguritaRow();
@@ -349,7 +362,15 @@
           document.getElementById('formTitle').textContent = 'Reservá tu Álbum';
           document.getElementById('formSubtitle').textContent = 'Completá tus datos de contacto y subí el comprobante de transferencia para registrarte.';
           document.getElementById('nombreLabel').textContent = 'Nombre de la Jugadora *';
+          document.getElementById('categoriaLabel').textContent = 'Categoría / División *';
+          document.getElementById('telefonoLabel').textContent = 'Teléfono de Contacto *';
+          document.getElementById('comprobanteLabel').textContent = 'Comprobante de Transferencia (Foto o PDF) *';
           document.getElementById('submitBtnText').textContent = 'Reservar Álbum';
+
+          nombreInput.required = true;
+          categoriaInput.required = true;
+          telefonoInput.required = true;
+          comprobanteInput.required = true;
         }
 
         recalculateTotal();
@@ -464,14 +485,16 @@
         const telefono = document.getElementById('telefono').value.trim();
         const observaciones = document.getElementById('observaciones').value.trim();
 
-        if (!categoria) {
-          showToast("❌ Debes seleccionar una categoría", "error");
-          return;
-        }
+        if (tipoPedido !== 'figugigante') {
+          if (!categoria) {
+            showToast("❌ Debes seleccionar una categoría", "error");
+            return;
+          }
 
-        if (!fileObj) {
-          showToast("❌ Debes adjuntar el comprobante de transferencia", "error");
-          return;
+          if (!fileObj) {
+            showToast("❌ Debes adjuntar el comprobante de transferencia", "error");
+            return;
+          }
         }
 
         if (tipoPedido === 'figugigante') {

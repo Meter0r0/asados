@@ -181,9 +181,6 @@ function buscarYCopiarFigurita(numeroRaw, nombreJugadora, sourceFolder, destFold
  */
 function guardarRegistroFiguGigante(nombre, categoria, telefono, figuritas, observaciones, fileObj) {
   try {
-    if (!nombre || !categoria || !telefono) {
-      throw new Error("Faltan datos de contacto obligatorios.");
-    }
     if (!Array.isArray(figuritas) || figuritas.length === 0) {
       throw new Error("Debes agregar al menos una FiguGigante al pedido.");
     }
@@ -195,9 +192,6 @@ function guardarRegistroFiguGigante(nombre, categoria, telefono, figuritas, obse
         throw new Error("Falta el nombre de la jugadora para la figurita " + item.numero);
       }
     });
-    if (!fileObj || !fileObj.data) {
-      throw new Error("El comprobante de transferencia es obligatorio.");
-    }
 
     const ss = SpreadsheetApp.openById(SPREADSHEET_PV_ID);
     let sheet = ss.getSheetByName("FiguGigante");
@@ -227,14 +221,17 @@ function guardarRegistroFiguGigante(nombre, categoria, telefono, figuritas, obse
       }
     }
 
-    // Subir comprobante a Google Drive (compartido para todo el pedido)
-    const comprobantesFolder = DriveApp.getFolderById(FOLDER_COMPROBANTES_ID);
-    const cleanName = nombre.replace(/[^a-zA-Z0-9]/g, "_");
-    const ext = fileObj.fileName.substring(fileObj.fileName.lastIndexOf('.'));
-    const newFileName = "Comprobante_" + newId + "_" + cleanName + ext;
-    const blob = Utilities.newBlob(Utilities.base64Decode(fileObj.data), fileObj.mimeType, newFileName);
-    const comprobanteFile = comprobantesFolder.createFile(blob);
-    const fileUrl = comprobanteFile.getUrl();
+    // Subir comprobante a Google Drive si fue adjuntado (opcional en este flujo)
+    let fileUrl = "";
+    if (fileObj && fileObj.data) {
+      const comprobantesFolder = DriveApp.getFolderById(FOLDER_COMPROBANTES_ID);
+      const cleanName = (nombre || "SinNombre").replace(/[^a-zA-Z0-9]/g, "_");
+      const ext = fileObj.fileName.substring(fileObj.fileName.lastIndexOf('.'));
+      const newFileName = "Comprobante_" + newId + "_" + cleanName + ext;
+      const blob = Utilities.newBlob(Utilities.base64Decode(fileObj.data), fileObj.mimeType, newFileName);
+      const comprobanteFile = comprobantesFolder.createFile(blob);
+      fileUrl = comprobanteFile.getUrl();
+    }
 
     const sourceFolder = DriveApp.getFolderById(FOLDER_FIGURITAS_ORIGEN_ID);
     const destFolder = DriveApp.getFolderById(FOLDER_FIGURITAS_DESTINO_ID);
