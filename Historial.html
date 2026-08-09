@@ -1,0 +1,532 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <base target="_top">
+    <meta charset="utf-8">
+    <title>Historial de Ventas - ORC</title>
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+      tailwind.config = {
+        theme: {
+          extend: {
+            colors: {
+              slate: {
+                800: '#1e293b',
+                850: '#1e293b', // fallback
+                900: '#0f172a',
+                950: '#020617',
+              }
+            }
+          }
+        }
+      }
+    </script>
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;450;600;800;900&family=Plus+Jakarta+Sans:wght@300;400;600;700;800&display=swap" rel="stylesheet">
+    <style>
+      body {
+        font-family: 'Plus Jakarta Sans', sans-serif;
+        background: radial-gradient(circle at top, #0f172a 0%, #020617 100%);
+      }
+      h1, h2, h3, .font-outfit {
+        font-family: 'Outfit', sans-serif;
+      }
+      .loader-mini {
+        border: 2px solid transparent;
+        border-radius: 50%;
+        border-top: 2px solid #6366f1;
+        width: 16px;
+        height: 16px;
+        animation: spin 1s linear infinite;
+      }
+      @keyframes spin {
+        0% { transform: rotate(0deg); }
+        100% { transform: rotate(360deg); }
+      }
+      select.clean-select {
+        -webkit-appearance: none;
+        -moz-appearance: none;
+        appearance: none;
+        background-image: url("data:image/svg+xml;charset=utf-8,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 20 20'%3E%3Cpath stroke='%2394a3b8' stroke-linecap='round' stroke-linejoin='round' stroke-width='1.5' d='M6 8l4 4 4-4'/%3E%3C/svg%3E");
+        background-position: right 0.75rem center;
+        background-repeat: no-repeat;
+        background-size: 1.25rem;
+        padding-right: 2.25rem;
+      }
+      select option {
+        background-color: #0f172a;
+        color: #f8fafc;
+      }
+      /* Forzar alto contraste y legibilidad en inputs y selects en modo oscuro */
+      select {
+        background-color: #1e293b !important;
+        color: #ffffff !important;
+        border-color: #475569 !important;
+      }
+    </style>
+  </head>
+  <body class="min-h-screen text-slate-100 flex flex-col antialiased">
+    
+    <!-- Toast Notification -->
+    <div id="toast" class="fixed bottom-5 right-5 z-50 transform translate-y-20 opacity-0 transition-all duration-300 pointer-events-none">
+      <div class="bg-slate-900 border border-slate-700 text-slate-100 px-4 py-3 rounded-lg shadow-2xl flex items-center space-x-2">
+        <span id="toastIcon">🔄</span>
+        <span id="toastMessage" class="text-sm font-medium">Cargando...</span>
+      </div>
+    </div>
+
+    <!-- Main Container -->
+    <div class="w-full max-w-4xl mx-auto px-4 py-6 flex-grow flex flex-col space-y-6">
+      
+      <!-- Top Navigation & Title -->
+      <div class="flex flex-col sm:flex-row justify-between items-center bg-slate-900/70 border border-slate-800 backdrop-blur-md rounded-2xl p-5 gap-4 shadow-lg">
+        <div class="text-center sm:text-left">
+          <div class="flex items-center justify-center sm:justify-start space-x-2">
+            <span class="text-3xl">📋</span>
+            <h1 class="text-xl font-extrabold tracking-tight text-white font-outfit">Historial de Ventas</h1>
+          </div>
+          <p class="text-slate-400 text-xs mt-0.5 font-medium">Ver, editar y eliminar ventas registradas</p>
+        </div>
+        <div class="flex space-x-2">
+          <a id="btnAsistencia" href="#" target="_top" class="inline-flex items-center space-x-1.5 px-4 py-2.5 bg-slate-800 hover:bg-slate-700 border border-slate-700 text-slate-350 hover:text-white rounded-xl text-xs font-bold transition">
+            <span>📅 Asistencia</span>
+          </a>
+          <a id="btnPuntoVenta" href="#" target="_top" class="inline-flex items-center space-x-1.5 px-4 py-2.5 bg-slate-800 hover:bg-slate-700 border border-slate-700 text-slate-350 hover:text-white rounded-xl text-xs font-bold transition">
+            <span>🛒 Punto de Venta</span>
+          </a>
+          <a id="btnDashboard" href="#" target="_top" class="inline-flex items-center space-x-1.5 px-4 py-2.5 bg-slate-800 hover:bg-slate-700 border border-slate-700 text-slate-350 hover:text-white rounded-xl text-xs font-bold transition">
+            <span>📊 Dashboard</span>
+          </a>
+          <a id="btnPreventa" href="#" target="_top" class="inline-flex items-center space-x-1.5 px-4 py-2.5 bg-slate-800 hover:bg-slate-700 border border-slate-700 text-slate-350 hover:text-white rounded-xl text-xs font-bold transition">
+            <span>📢 Reserva de Álbumes</span>
+          </a>
+        </div>
+      </div>
+
+      <!-- Seller Selection (Vendedor) -->
+      <div class="bg-slate-900/50 border border-slate-800/80 backdrop-blur-md rounded-2xl p-5 shadow-lg">
+        <label for="vendedor" class="block text-xs font-semibold text-slate-300 uppercase tracking-wider mb-2">Seleccionar Asistente / Vendedor</label>
+        <div class="relative">
+          <select id="vendedor" required onchange="onVendedorChange()" class="clean-select block w-full px-4 py-3 bg-slate-800 border border-slate-700 text-slate-100 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500 text-sm font-semibold">
+            <option value="" disabled selected>Selecciona tu nombre</option>
+            <option value="Joaco">👤 Joaco</option>
+            <option value="Fusche">👤 Fusche</option>
+            <option value="MartinC">👤 MartinC</option>
+            <option value="MartinD">👤 MartinD</option>
+            <option value="Fortu">👤 Fortu</option>
+            <option value="Garu">👤 Garu</option>
+            <option value="Facu">👤 Facu</option>
+          </select>
+        </div>
+      </div>
+
+      <!-- History List Container -->
+      <div id="historyBlock" class="bg-slate-900/40 border border-slate-800/60 backdrop-blur-md rounded-2xl p-5 shadow-lg hidden flex-grow">
+        <div class="flex justify-between items-center mb-4">
+          <h2 class="text-xs font-semibold text-slate-300 uppercase tracking-widest pl-1">Ventas Registradas</h2>
+          <span id="historyCount" class="text-[10px] bg-slate-800 px-2 py-0.5 rounded-full text-slate-400 font-mono font-bold">0 ventas</span>
+        </div>
+
+        <!-- Resumen de Totales del Vendedor -->
+        <div id="sellerSummary" class="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-5 hidden">
+          <!-- Card de Dinero -->
+          <div class="bg-slate-950/60 border border-slate-800 rounded-xl p-4 flex flex-col justify-between shadow-inner">
+            <span class="text-[10px] text-indigo-300 font-extrabold uppercase tracking-wider block mb-2">Resumen de Caja</span>
+            <div class="flex justify-between items-baseline">
+              <span class="text-xs text-slate-400 font-semibold">Total Recaudado:</span>
+              <span id="sumTotal" class="text-xl font-black text-emerald-400 font-mono font-outfit">$0</span>
+            </div>
+            <div class="flex justify-between items-center text-[10px] text-slate-400 mt-2 pt-2 border-t border-slate-800/80">
+              <span>💵 Ef: <strong id="sumEfectivo" class="text-slate-250 font-mono font-bold">$0</strong></span>
+              <span>💳 CBU: <strong id="sumCbu" class="text-slate-250 font-mono font-bold">$0</strong></span>
+            </div>
+          </div>
+          
+          <!-- Card de Productos -->
+          <div class="bg-slate-950/60 border border-slate-800 rounded-xl p-4 flex flex-col justify-between shadow-inner">
+            <span class="text-[10px] text-emerald-300 font-extrabold uppercase tracking-wider block mb-2">Resumen de Productos</span>
+            <div class="grid grid-cols-2 gap-2 text-xs font-semibold">
+              <div class="flex justify-between col-span-2">
+                <span class="text-slate-400">📖 Álbumes ($25k / $30k):</span>
+                <span class="text-slate-200 font-mono"><span id="sumAlbums">0</span> / <span id="sumAlbums30k">0</span></span>
+              </div>
+              <div class="flex justify-between">
+                <span class="text-slate-400">✨ 1 Paq:</span>
+                <span id="sumPaq1" class="text-slate-200 font-mono">0</span>
+              </div>
+              <div class="flex justify-between">
+                <span class="text-slate-400">📦 Combo 4:</span>
+                <span id="sumPaq4" class="text-slate-200 font-mono">0</span>
+              </div>
+              <div class="flex justify-between">
+                <span class="text-slate-400">🔥 Pack 10:</span>
+                <span id="sumPaq10" class="text-slate-200 font-mono">0</span>
+              </div>
+              <div class="flex justify-between">
+                <span class="text-slate-400">🦸 FiguGigante:</span>
+                <span id="sumFiguGigante" class="text-slate-200 font-mono">0</span>
+              </div>
+            </div>
+            <div class="text-[10px] text-slate-400 mt-2 pt-2 border-t border-slate-800/80 text-right uppercase tracking-wider font-extrabold">
+              Paquetes Totales: <strong id="sumTotalPacks" class="text-emerald-300 font-mono text-xs">0</strong>
+            </div>
+          </div>
+        </div>
+
+        <!-- History Loading -->
+        <div id="historyLoader" class="flex flex-col items-center justify-center py-12 space-y-3 hidden">
+          <div class="loader-mini !w-8 !h-8"></div>
+          <p class="text-slate-400 text-[11px] font-semibold">Cargando ventas...</p>
+        </div>
+
+        <!-- Empty State -->
+        <div id="historyEmpty" class="py-12 text-center text-slate-500 text-xs font-medium border border-dashed border-slate-800 rounded-xl hidden">
+          No se encontraron ventas para este vendedor.
+        </div>
+
+        <!-- Sales Feed -->
+        <div id="historyContainer" class="space-y-2.5 max-h-[500px] overflow-y-auto pr-1 hidden">
+          <!-- Dinámico -->
+        </div>
+      </div>
+
+    </div>
+
+    <!-- Footer -->
+    <footer class="w-full text-center py-6 text-[10px] text-slate-500 border-t border-slate-900 mt-6">
+      <p>Club Olivos Hockey - Sistema de Control Interno</p>
+    </footer>
+
+    <!-- Logic Script -->
+    <script>
+      const vendedorUrlParam = "<?= vendedor ?>";
+      let localSales = []; // Historial de ventas cargado
+      let webAppUrl = "";
+
+      window.addEventListener('DOMContentLoaded', () => {
+        setupNavUrls();
+        
+        // Si viene el vendedor por parámetro en la URL, pre-seleccionar
+        if (vendedorUrlParam) {
+          const selectEl = document.getElementById('vendedor');
+          if (selectEl) {
+            const exists = Array.from(selectEl.options).some(opt => opt.value === vendedorUrlParam);
+            if (exists) {
+              selectEl.value = vendedorUrlParam;
+              onVendedorChange();
+            }
+          }
+        }
+      });
+
+      // Configura los enlaces de navegación a partir de la URL de publicación de Apps Script
+      function setupNavUrls() {
+        if (typeof google !== 'undefined' && google.script && google.script.run) {
+          google.script.run
+            .withSuccessHandler(url => {
+              webAppUrl = url;
+              document.getElementById('btnAsistencia').href = url + '?page=asistencia';
+              document.getElementById('btnPuntoVenta').href = url + '?page=puntoventa';
+              document.getElementById('btnDashboard').href = url + '?page=dashboard';
+              document.getElementById('btnPreventa').href = 'https://script.google.com/macros/s/AKfycbz-fgBkbynC_yw8R8t2bs7xNfpHJI4JwsE0pjtQD2Zthd9uqtNB22HKFyuurwZxqakF/exec';
+            })
+            .getWebAppUrl();
+        }
+      }
+
+      // Se ejecuta cuando cambia la selección de vendedor
+      function onVendedorChange() {
+        const vendedorVal = document.getElementById('vendedor').value;
+        const historyBlock = document.getElementById('historyBlock');
+
+        if (vendedorVal) {
+          historyBlock.classList.remove('hidden');
+          loadHistory();
+        } else {
+          historyBlock.classList.add('hidden');
+        }
+      }
+
+      // Trae el historial del vendedor seleccionado
+      function loadHistory() {
+        const vendedorVal = document.getElementById('vendedor').value;
+        if (!vendedorVal) return;
+
+        const loader = document.getElementById('historyLoader');
+        const empty = document.getElementById('historyEmpty');
+        const container = document.getElementById('historyContainer');
+
+        loader.classList.remove('hidden');
+        empty.classList.add('hidden');
+        container.classList.add('hidden');
+
+        if (typeof google !== 'undefined' && google.script && google.script.run) {
+          google.script.run
+            .withSuccessHandler(data => {
+              localSales = data || [];
+              renderHistory();
+            })
+            .withFailureHandler(err => {
+              loader.classList.add('hidden');
+              empty.classList.remove('hidden');
+              showToast("❌ Error al cargar historial: " + err.message, "error");
+            })
+            .getVentasPuntoVenta(vendedorVal);
+        } else {
+          // Offline Mock
+          setTimeout(() => {
+            localSales = getMockHistory(vendedorVal);
+            renderHistory();
+          }, 800);
+        }
+      }
+
+      // Renderiza el historial en pantalla
+      function renderHistory() {
+        const loader = document.getElementById('historyLoader');
+        const empty = document.getElementById('historyEmpty');
+        const container = document.getElementById('historyContainer');
+        const countBadge = document.getElementById('historyCount');
+
+        loader.classList.add('hidden');
+        countBadge.textContent = `${localSales.length} ${localSales.length === 1 ? 'venta' : 'ventas'}`;
+
+        const summaryDiv = document.getElementById('sellerSummary');
+
+        if (localSales.length === 0) {
+          if (summaryDiv) summaryDiv.classList.add('hidden');
+          empty.classList.remove('hidden');
+          container.classList.add('hidden');
+          return;
+        }
+
+        container.classList.remove('hidden');
+        container.innerHTML = '';
+
+        const currencyFormatter = new Intl.NumberFormat('es-AR', {
+          style: 'currency',
+          currency: 'ARS',
+          minimumFractionDigits: 0
+        });
+
+        // Calcular acumulados del vendedor
+        let totalMoney = 0;
+        let totalEfectivo = 0;
+        let totalCbu = 0;
+        let totalAlbums = 0;
+        let totalAlbums30k = 0;
+        let totalPaq1 = 0;
+        let totalPaq4 = 0;
+        let totalPaq10 = 0;
+        let totalFiguGigante = 0;
+
+        localSales.forEach(v => {
+          totalMoney += v.total || 0;
+          totalEfectivo += v.efectivo || 0;
+          totalCbu += v.cbu || 0;
+          totalAlbums += v.albums || 0;
+          totalAlbums30k += v.albums30k || 0;
+          totalPaq1 += v.paq1 || 0;
+          totalPaq4 += v.paq4 || 0;
+          totalPaq10 += v.paq10 || 0;
+          totalFiguGigante += v.figuGigante || 0;
+        });
+
+        // Actualizar panel de resumen
+        if (summaryDiv) {
+          summaryDiv.classList.remove('hidden');
+          document.getElementById('sumTotal').textContent = currencyFormatter.format(totalMoney);
+          document.getElementById('sumEfectivo').textContent = currencyFormatter.format(totalEfectivo);
+          document.getElementById('sumCbu').textContent = currencyFormatter.format(totalCbu);
+          document.getElementById('sumAlbums').textContent = totalAlbums.toLocaleString('es-AR');
+          document.getElementById('sumAlbums30k').textContent = totalAlbums30k.toLocaleString('es-AR');
+          document.getElementById('sumPaq1').textContent = totalPaq1.toLocaleString('es-AR');
+          document.getElementById('sumPaq4').textContent = totalPaq4.toLocaleString('es-AR');
+          document.getElementById('sumPaq10').textContent = totalPaq10.toLocaleString('es-AR');
+          document.getElementById('sumFiguGigante').textContent = totalFiguGigante.toLocaleString('es-AR');
+
+          const totalPacks = totalPaq1 + (totalPaq4 * 4) + (totalPaq10 * 10);
+          document.getElementById('sumTotalPacks').textContent = totalPacks.toLocaleString('es-AR');
+        }
+
+        localSales.forEach(v => {
+          // Formatear fecha
+          const dateObj = new Date(v.timestamp);
+          const timeStr = dateObj.toLocaleTimeString('es-AR', { hour: '2-digit', minute: '2-digit' });
+          const dateStr = dateObj.toLocaleDateString('es-AR', { day: '2-digit', month: '2-digit' });
+
+          // Desglose de productos
+          const products = [];
+          if (v.albums > 0) products.push(`📖 ${v.albums} Alb($25k)`);
+          if (v.albums30k > 0) products.push(`📖 ${v.albums30k} Alb($30k)`);
+          if (v.paq1 > 0) products.push(`✨ ${v.paq1} Paq`);
+          if (v.paq4 > 0) products.push(`📦 ${v.paq4} Combo4`);
+          if (v.paq10 > 0) products.push(`🔥 ${v.paq10} Super10`);
+          if (v.figuGigante > 0) products.push(`🦸 ${v.figuGigante} FiguGigante`);
+          const desglose = products.join(' • ');
+
+          // Desglose de cobro
+          const cobro = [];
+          if (v.efectivo > 0) {
+            let efText = `💵 $${v.efectivo} Ef`;
+            if (v.contado !== undefined && v.contado !== 0 && v.contado !== v.efectivo) {
+              const diffVal = v.diferencia || 0;
+              const diffText = diffVal > 0 ? `+${diffVal}` : `${diffVal}`;
+              efText += ` (Contado: $${v.contado} | Dif: ${diffText})`;
+            }
+            cobro.push(efText);
+          }
+          if (v.cbu > 0) cobro.push(`💳 $${v.cbu} CBU`);
+          const cobroDesglose = cobro.join(' / ');
+
+          const item = document.createElement('div');
+          item.className = "bg-slate-950/60 border border-slate-800 hover:border-slate-700 rounded-xl p-3 flex justify-between items-center transition";
+          item.innerHTML = `
+            <div class="space-y-1">
+              <div class="flex items-center space-x-2">
+                <span class="text-[10px] text-slate-400 font-bold font-mono">${dateStr} ${timeStr}</span>
+                ${v.comprador ? `<span class="px-1.5 py-0.5 rounded bg-indigo-550/10 text-indigo-300 text-[9px] font-bold">📝 ${v.comprador}</span>` : ''}
+              </div>
+              <p class="text-xs font-semibold text-slate-200">${desglose || 'Sin productos'}</p>
+              <p class="text-[9px] text-slate-400 font-medium">${cobroDesglose || 'Sin Cobro'}</p>
+            </div>
+            <div class="flex items-center space-x-2 pl-2">
+              <div class="text-right mr-1">
+                <span class="text-xs font-extrabold text-emerald-400 block">${currencyFormatter.format(v.total)}</span>
+              </div>
+              <button 
+                type="button" 
+                onclick="editSale('${v.id}')"
+                class="px-2.5 py-1.5 bg-slate-800 hover:bg-slate-750 text-indigo-300 hover:text-indigo-200 rounded-lg text-[10px] font-bold transition border border-slate-700"
+              >
+                ✏️ Editar
+              </button>
+              <button 
+                type="button" 
+                onclick="deleteSale('${v.id}')"
+                class="px-2.5 py-1.5 bg-rose-950/20 hover:bg-rose-900/30 text-rose-400 hover:text-rose-350 rounded-lg text-[10px] font-bold transition border border-rose-900/50"
+              >
+                🗑️ Borrar
+              </button>
+            </div>
+          `;
+          container.appendChild(item);
+        });
+      }
+
+      // Redirige al Punto de Venta en modo edición
+      function editSale(saleId) {
+        const sale = localSales.find(s => s.id === saleId);
+        if (!sale) return;
+        
+        const url = (webAppUrl || '') + '?page=puntoventa&vendedor=' + encodeURIComponent(sale.vendedor) + '&edit=' + encodeURIComponent(saleId);
+        window.open(url, '_top');
+      }
+
+      // Elimina una venta seleccionada previa confirmación
+      function deleteSale(saleId) {
+        const sale = localSales.find(s => s.id === saleId);
+        if (!sale) return;
+
+        const buyerText = sale.comprador ? ` (${sale.comprador})` : "";
+        if (!confirm(`¿Estás seguro de que quieres eliminar esta venta${buyerText} por un total de $${sale.total}?`)) {
+          return;
+        }
+
+        showToast("Eliminando venta...", "loading");
+
+        if (typeof google !== 'undefined' && google.script && google.script.run) {
+          google.script.run
+            .withSuccessHandler(response => {
+              loadHistory();
+              showToast("✓ Venta eliminada con éxito", "success");
+            })
+            .withFailureHandler(err => {
+              showToast("❌ Error al eliminar: " + err.message, "error");
+            })
+            .eliminarVentaPuntoVenta(saleId);
+        } else {
+          // Offline Mock
+          setTimeout(() => {
+            const idx = localSales.findIndex(s => s.id === saleId);
+            if (idx !== -1) {
+              localSales.splice(idx, 1);
+            }
+            renderHistory();
+            showToast("✓ Venta eliminada con éxito (Mock)", "success");
+          }, 800);
+        }
+      }
+
+      // Mock data offline
+      function getMockHistory(vendedor) {
+        return [
+          {
+            timestamp: "2026-07-08T12:21:08.706Z",
+            id: "PV-1783527670404-876",
+            vendedor: vendedor,
+            comprador: "Lucas Pérez",
+            albums: 1,
+            paq1: 0,
+            paq4: 0,
+            paq10: 1,
+            figuGigante: 0,
+            total: 45000,
+            efectivo: 45000,
+            cbu: 0
+          },
+          {
+            timestamp: "2026-07-08T12:37:27.855Z",
+            id: "PV-1783528648532-593",
+            vendedor: vendedor,
+            comprador: "",
+            albums: 0,
+            paq1: 2,
+            paq4: 1,
+            paq10: 0,
+            figuGigante: 1,
+            total: 26000,
+            efectivo: 16000,
+            cbu: 10000
+          }
+        ];
+      }
+
+      // Notificaciones Toast
+      function showToast(message, type = "success") {
+        const toast = document.getElementById('toast');
+        const icon = document.getElementById('toastIcon');
+        const msg = document.getElementById('toastMessage');
+
+        msg.textContent = message;
+
+        if (type === "error") {
+          icon.textContent = "❌";
+          toast.firstElementChild.className = "bg-slate-900 border border-rose-500/50 text-rose-200 px-4 py-3 rounded-lg shadow-2xl flex items-center space-x-2";
+        } else if (type === "success") {
+          icon.textContent = "✓";
+          toast.firstElementChild.className = "bg-slate-900 border border-emerald-500/50 text-emerald-200 px-4 py-3 rounded-lg shadow-2xl flex items-center space-x-2";
+        } else if (type === "loading") {
+          icon.textContent = "🔄";
+          toast.firstElementChild.className = "bg-slate-900 border border-indigo-500/50 text-indigo-200 px-4 py-3 rounded-lg shadow-2xl flex items-center space-x-2";
+        } else {
+          icon.textContent = "ℹ️";
+          toast.firstElementChild.className = "bg-slate-900 border border-slate-700 text-slate-350 px-4 py-3 rounded-lg shadow-2xl flex items-center space-x-2";
+        }
+
+        // Show toast
+        toast.classList.remove('translate-y-20', 'opacity-0');
+        
+        // Hide after 3.5s (except loading)
+        if (type !== "loading") {
+          setTimeout(() => {
+            toast.classList.add('translate-y-20', 'opacity-0');
+          }, 3500);
+        }
+      }
+    </script>
+  </body>
+</html>

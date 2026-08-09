@@ -492,6 +492,7 @@
         const paq1 = prodsData.paq1 || { qty: 0, revenue: 0 };
         const paq4 = prodsData.paq4 || { qty: 0, revenue: 0 };
         const paq10 = prodsData.paq10 || { qty: 0, revenue: 0 };
+        const figuGigante = prodsData.figuGigante || { qty: 0, revenue: 0 };
 
         // 1. Progreso del Objetivo (37.000 paquetes)
         const pack1Qty = paq1.qty || 0;
@@ -567,7 +568,8 @@
           { name: "📖 Libro / Álbum $30k", qty: albums30k.qty || 0, rev: albums30k.revenue || 0, color: "text-purple-400" },
           { name: "✨ 1 Paquete", qty: pack1Qty, rev: paq1.revenue || 0, color: "text-emerald-400" },
           { name: "📦 Combo 4 Paq.", qty: paq4Qty, rev: paq4.revenue || 0, color: "text-sky-400" },
-          { name: "🔥 Super Pack 10 Paq.", qty: paq10Qty, rev: paq10.revenue || 0, color: "text-amber-400" }
+          { name: "🔥 Super Pack 10 Paq.", qty: paq10Qty, rev: paq10.revenue || 0, color: "text-amber-400" },
+          { name: "🦸 FiguGigante", qty: figuGigante.qty || 0, rev: figuGigante.revenue || 0, color: "text-rose-400" }
         ];
 
         prods.forEach(p => {
@@ -647,6 +649,7 @@
               if (sale.paq1 > 0) products.push(`✨ ${sale.paq1} Paq`);
               if (sale.paq4 > 0) products.push(`📦 ${sale.paq4} Combo4`);
               if (sale.paq10 > 0) products.push(`🔥 ${sale.paq10} Pack10`);
+              if (sale.figuGigante > 0) products.push(`🦸 ${sale.figuGigante} FiguGigante`);
               const desglose = products.join(' • ') || 'Sin productos';
 
               const tr = document.createElement('tr');
@@ -794,8 +797,8 @@
           });
         }
 
-        // Colores premium acordes al tema (Indigo, Purple, Emerald, Sky, Amber)
-        const colorsProducts = ['#6366f1', '#a855f7', '#10b981', '#0ea5e9', '#f59e0b']; 
+        // Colores premium acordes al tema (Indigo, Purple, Emerald, Sky, Amber, Rose)
+        const colorsProducts = ['#6366f1', '#a855f7', '#10b981', '#0ea5e9', '#f59e0b', '#f43f5e'];
         const colorsPayments = ['#34d399', '#60a5fa']; // emerald light, blue light
 
         const ctxProduct = document.getElementById('productChart').getContext('2d');
@@ -807,9 +810,10 @@
           (prodsData.albums30k && prodsData.albums30k.qty) || 0,
           (prodsData.paq1 && prodsData.paq1.qty) || 0,
           (prodsData.paq4 && prodsData.paq4.qty) || 0,
-          (prodsData.paq10 && prodsData.paq10.qty) || 0
+          (prodsData.paq10 && prodsData.paq10.qty) || 0,
+          (prodsData.figuGigante && prodsData.figuGigante.qty) || 0
         ];
-        const prodLabels = ['📖 Álbumes $25k', '📖 Álbumes $30k', '✨ 1 Paquete', '📦 Combo 4', '🔥 Super Pack 10'];
+        const prodLabels = ['📖 Álbumes $25k', '📖 Álbumes $30k', '✨ 1 Paquete', '📦 Combo 4', '🔥 Super Pack 10', '🦸 FiguGigante'];
         const totalProds = prodData.reduce((a, b) => a + b, 0);
 
         if (productChartInstance) {
@@ -946,7 +950,8 @@
             albums30k: { qty: 4, revenue: 120000 },
             paq1: { qty: 25, revenue: 75000 },
             paq4: { qty: 15, revenue: 150000 },
-            paq10: { qty: 32, revenue: 640000 }
+            paq10: { qty: 32, revenue: 640000 },
+            figuGigante: { qty: 6, revenue: 60000 }
           },
           vendedores: {
             Joaco: { efectivo: 80000, cbu: 120000, total: 200000, albums: 1, albums30k: 0, paquetes: 50 },
@@ -977,8 +982,8 @@
             totalSemanasActivas: 4
           },
           ultimasVentas: [
-            { id: "PV-MOCK-1", timestamp: new Date().toISOString(), vendedor: "Fusche", comprador: "Juan / 6to B", albums: 1, albums30k: 1, paq1: 0, paq4: 0, paq10: 2, total: 95000, efectivo: 55000, cbu: 40000 },
-            { id: "PV-MOCK-2", timestamp: new Date(Date.now() - 300000).toISOString(), vendedor: "Joaco", comprador: "Pedro", albums: 0, albums30k: 0, paq1: 3, paq4: 1, paq10: 1, total: 39000, efectivo: 39000, cbu: 0 }
+            { id: "PV-MOCK-1", timestamp: new Date().toISOString(), vendedor: "Fusche", comprador: "Juan / 6to B", albums: 1, albums30k: 1, paq1: 0, paq4: 0, paq10: 2, figuGigante: 1, total: 105000, efectivo: 65000, cbu: 40000 },
+            { id: "PV-MOCK-2", timestamp: new Date(Date.now() - 300000).toISOString(), vendedor: "Joaco", comprador: "Pedro", albums: 0, albums30k: 0, paq1: 3, paq4: 1, paq10: 1, figuGigante: 0, total: 39000, efectivo: 39000, cbu: 0 }
           ]
         };
       }
