@@ -730,7 +730,7 @@ function getDashboardData() {
     };
 
     // Inicializar vendedores oficiales
-    const vendedoresOficiales = ["Joaco", "Fusche", "MartinC", "MartinD", "Fortu", "Garu", "Facu"];
+    const vendedoresOficiales = ["Joaco", "Fusche", "MartinC", "MartinD", "Fortu", "Garu", "Facu", "Bar"];
     vendedoresOficiales.forEach(v => {
       stats.vendedores[v] = { efectivo: 0, cbu: 0, total: 0, sinClasificar: 0, albums: 0, albums30k: 0, paquetes: 0 };
     });
