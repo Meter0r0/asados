@@ -1,0 +1,691 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <base target="_top">
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Caja y Ventas - ORC</title>
+    <!-- Google Fonts Outfit -->
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+      tailwind.config = {
+        theme: {
+          extend: {
+            fontFamily: {
+              sans: ['Outfit', 'sans-serif'],
+            },
+          },
+        },
+      }
+    </script>
+    <style>
+      body {
+        font-family: 'Outfit', sans-serif;
+        background: radial-gradient(circle at top, #0f172a 0%, #020617 100%);
+      }
+
+      /* Scrollbar personalizada */
+      ::-webkit-scrollbar {
+        width: 6px;
+        height: 6px;
+      }
+      ::-webkit-scrollbar-track {
+        background: #020617;
+      }
+      ::-webkit-scrollbar-thumb {
+        background: #1e293b;
+        border-radius: 4px;
+      }
+      ::-webkit-scrollbar-thumb:hover {
+        background: #334155;
+      }
+
+      /* Spinner animado */
+      .loader-mini {
+        border: 2px solid rgba(255, 255, 255, 0.1);
+        border-top-color: #6366f1;
+        border-radius: 50%;
+        width: 1rem;
+        height: 1rem;
+        animation: spin 1s linear infinite;
+      }
+      @keyframes spin {
+        0% { transform: rotate(0deg); }
+        100% { transform: rotate(360deg); }
+      }
+
+      /* Mapeo de estilos dinámicos para colaboradores */
+      .badge-joaco { background-color: rgba(14, 165, 233, 0.15); color: #38bdf8; border: 1px solid rgba(14, 165, 233, 0.3); }
+      .badge-fusche { background-color: rgba(217, 70, 239, 0.15); color: #f472b6; border: 1px solid rgba(217, 70, 239, 0.3); }
+      .badge-martinc { background-color: rgba(16, 185, 129, 0.15); color: #34d399; border: 1px solid rgba(16, 185, 129, 0.3); }
+      .badge-fortu { background-color: rgba(249, 115, 22, 0.15); color: #fb923c; border: 1px solid rgba(249, 115, 22, 0.3); }
+      .badge-garu { background-color: rgba(234, 179, 8, 0.15); color: #facc15; border: 1px solid rgba(234, 179, 8, 0.3); }
+      .badge-caro { background-color: rgba(244, 63, 94, 0.15); color: #fb7185; border: 1px solid rgba(244, 63, 94, 0.3); }
+      .badge-martind { background-color: rgba(109, 40, 217, 0.15); color: #ddd6fe; border: 1px solid rgba(139, 92, 246, 0.3); }
+      .badge-facu { background-color: rgba(20, 184, 166, 0.15); color: #2dd4bf; border: 1px solid rgba(20, 184, 166, 0.3); }
+      .badge-todos { background-color: rgba(148, 163, 184, 0.15); color: #cbd5e1; border: 1px solid rgba(148, 163, 184, 0.3); }
+      .badge-empty { background-color: rgba(239, 68, 68, 0.08); color: #fca5a5; border: 1px dashed rgba(239, 68, 68, 0.45); }
+    </style>
+  </head>
+  <body class="min-h-screen text-slate-100 flex flex-col antialiased">
+    
+    <!-- Toast Notification -->
+    <div id="toast" class="fixed bottom-5 right-5 z-50 transform translate-y-20 opacity-0 transition-all duration-300 pointer-events-none">
+      <div class="bg-slate-900 border border-slate-700 text-slate-100 px-4 py-3 rounded-lg shadow-2xl flex items-center space-x-2">
+        <span id="toastIcon">🔄</span>
+        <span id="toastMessage" class="text-sm font-medium">Cargando...</span>
+      </div>
+    </div>
+
+    <!-- Main Container -->
+    <div class="w-full max-w-5xl mx-auto px-4 py-8 flex-grow flex flex-col space-y-8">
+      
+      <!-- Top Navigation & Title -->
+      <div class="flex flex-col sm:flex-row justify-between items-center bg-slate-900/60 border border-slate-800/80 backdrop-blur-md rounded-2xl p-6 gap-4">
+        <div class="text-center sm:text-left">
+          <div class="flex items-center justify-center sm:justify-start space-x-2">
+            <span class="text-3xl">🏑</span>
+            <h1 class="text-2xl font-bold tracking-tight text-white">Registro de Caja y Ventas</h1>
+          </div>
+          <p class="text-slate-400 text-sm mt-1">Ingreso de recaudación por turno — Cancha de Hockey 1 y 2</p>
+        </div>
+        <div class="flex space-x-2">
+          <a id="btnPuntoVenta" href="#" target="_top" class="inline-flex items-center space-x-1.5 px-4 py-2.5 bg-slate-800 hover:bg-slate-700 border border-slate-700 text-slate-300 rounded-xl text-sm font-semibold transition shadow-lg shadow-indigo-950/20">
+            <span>🛒 Punto de Venta</span>
+          </a>
+          <a id="btnAsistencia" href="#" target="_top" class="inline-flex items-center space-x-2 px-5 py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl text-sm font-semibold transition-all duration-200 border border-indigo-500 shadow-lg shadow-indigo-950/40">
+            <span>📅 Control de Asistencia</span>
+          </a>
+        </div>
+      </div>
+
+      <!-- Financial Statistics / Summary Board -->
+      <div class="grid grid-cols-1 md:grid-cols-3 gap-6 bg-slate-900/40 border border-slate-800/60 backdrop-blur-md rounded-2xl p-6">
+        <div class="flex flex-col space-y-1">
+          <span class="text-xs font-semibold text-slate-400 uppercase tracking-widest">Total Paquetes Vendidos</span>
+          <span id="totalPaquetes" class="text-3xl font-bold text-indigo-400">0 paq</span>
+        </div>
+        <div class="flex flex-col space-y-1 border-t md:border-t-0 md:border-l border-slate-800/60 pt-4 md:pt-0 md:pl-6">
+          <span class="text-xs font-semibold text-slate-400 uppercase tracking-widest">Total Recaudado Efectivo</span>
+          <span id="totalEfectivo" class="text-3xl font-bold text-emerald-400">$0</span>
+        </div>
+        <div class="flex flex-col space-y-1 border-t md:border-t-0 md:border-l border-slate-800/60 pt-4 md:pt-0 md:pl-6">
+          <span class="text-xs font-semibold text-slate-400 uppercase tracking-widest">Total Transferido (CBU)</span>
+          <span id="totalCbu" class="text-3xl font-bold text-sky-400">$0</span>
+        </div>
+      </div>
+
+      <!-- Shifts Cash Records Grid -->
+      <div>
+        <h2 class="text-lg font-bold text-white mb-6 flex items-center space-x-2">
+          <span>📋 Registro por Turnos</span>
+        </h2>
+
+        <div id="salesContainer" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          <!-- Dinámico: Tarjetas de Ventas -->
+          <div class="col-span-full py-20 flex flex-col items-center justify-center space-y-4">
+            <div class="loader-mini !w-8 !h-8 !border-t-indigo-400"></div>
+            <p class="text-slate-400 text-sm">Cargando registros de ventas y asistencia...</p>
+          </div>
+        </div>
+      </div>
+
+      <!-- Footer Info -->
+      <div class="text-center py-4">
+        <p class="text-slate-600 text-xs">Vendedores de Figuritas ORC • Versión 2.0 • Edición Directa Habilitada</p>
+      </div>
+
+    </div>
+
+    <!-- Registration/Edit Modal Overlay -->
+    <div id="cajaModal" class="fixed inset-0 z-50 hidden flex items-center justify-center bg-black/85 px-4 py-8 backdrop-blur-sm shadow-2xl">
+      <div class="bg-slate-900 border border-slate-700/80 rounded-2xl p-6 max-w-md w-full text-left shadow-2xl relative">
+        <h3 id="modalTitle" class="text-xl font-bold text-white mb-1">Registrar Caja</h3>
+        <p id="modalSubtitle" class="text-slate-400 text-xs mb-2"></p>
+        <p id="modalPlanned" class="text-xs text-slate-400 mb-5 p-2 bg-slate-800/40 border border-slate-800/80 rounded-xl"></p>
+        
+        <form id="cajaForm" class="space-y-4">
+          <!-- Hidden inputs for mapping -->
+          <input type="hidden" id="formRecordId">
+          <input type="hidden" id="formFecha">
+          <input type="hidden" id="formCancha">
+
+          <!-- Registrador selection -->
+          <div>
+            <label for="formRegistrador" class="block text-xs font-semibold text-slate-400 uppercase tracking-wider mb-1.5">¿Quién ingresa la caja?</label>
+            <select id="formRegistrador" required class="block w-full px-3 py-2 bg-slate-800 border border-slate-700 text-slate-100 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500 sm:text-sm">
+              <option value="" disabled selected>Selecciona colaborador</option>
+              <option value="Joaco">Joaco</option>
+              <option value="Fusche">Fusche</option>
+              <option value="MartinC">MartinC</option>
+              <option value="MartinD">MartinD</option>
+              <option value="Fortu">Fortu</option>
+              <option value="Garu">Garu</option>
+              <option value="Facu">Facu</option>
+              <option value="Bar">Bar</option>
+              <option value="Todos">Todos</option>
+            </select>
+          </div>
+
+          <!-- Sticker Packages Sold -->
+          <div>
+            <label for="formPaquetes" class="block text-xs font-semibold text-slate-400 uppercase tracking-wider mb-1.5">Paquetes Vendidos (cantidad)</label>
+            <input type="number" id="formPaquetes" required min="0" step="1" class="block w-full px-3 py-2 bg-slate-800 border border-slate-700 text-slate-100 rounded-xl placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-indigo-500 sm:text-sm" placeholder="Ej: 80">
+          </div>
+
+          <!-- Cash Received -->
+          <div>
+            <label for="formEfectivo" class="block text-xs font-semibold text-slate-400 uppercase tracking-wider mb-1.5">Recaudación en Efectivo (ARS)</label>
+            <div class="relative rounded-xl shadow-sm">
+              <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                <span class="text-slate-400 sm:text-sm">$</span>
+              </div>
+              <input type="number" id="formEfectivo" required min="0" step="1" class="block w-full pl-7 pr-3 py-2 bg-slate-800 border border-slate-700 text-slate-100 rounded-xl placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-indigo-500 sm:text-sm" placeholder="Monto total en billetes">
+            </div>
+          </div>
+
+          <!-- Transfer/CBU Received -->
+          <div>
+            <label for="formCbu" class="block text-xs font-semibold text-slate-400 uppercase tracking-wider mb-1.5">Recaudación por CBU / Transferencia (ARS)</label>
+            <div class="relative rounded-xl shadow-sm">
+              <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                <span class="text-slate-400 sm:text-sm">$</span>
+              </div>
+              <input type="number" id="formCbu" required min="0" step="1" class="block w-full pl-7 pr-3 py-2 bg-slate-800 border border-slate-700 text-slate-100 rounded-xl placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-indigo-500 sm:text-sm" placeholder="Monto total transferido">
+            </div>
+          </div>
+
+          <!-- Actions -->
+          <div class="flex space-x-3 pt-3">
+            <button type="button" onclick="closeModal()" class="flex-1 py-2.5 px-4 border border-slate-700 text-slate-300 font-semibold rounded-xl hover:bg-slate-800 focus:outline-none transition">
+              Cancelar
+            </button>
+            <button type="submit" id="submitBtn" class="flex-1 flex justify-center items-center py-2.5 px-4 bg-indigo-600 hover:bg-indigo-700 text-white font-semibold rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500 transition">
+              <span id="submitBtnText">Guardar Caja</span>
+              <div id="submitBtnLoader" class="loader-mini !border-t-white ml-2 hidden"></div>
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+
+    <!-- Logic Script -->
+    <script>
+      // Configuración de Turnos Activos
+      const SHIFTS_CONFIG = [
+        { id: "2026-07-09", label: "Jueves 9/7", time: "12:30 a 14:00 hs", displayDay: "Jueves 9 de Julio" },
+        { id: "2026-07-10", label: "Viernes 10/7", time: "18:00 a 20:30 hs", displayDay: "Viernes 10 de Julio" },
+        { id: "2026-07-11", label: "Sábado 11/7", time: "09:30 a 14:30 hs", displayDay: "Sábado 11 de Julio" },
+        { id: "2026-07-12", label: "Domingo 12/7", time: "09:30 a 14:30 hs", displayDay: "Domingo 12 de Julio", noCancha2: true },
+        { id: "2026-07-14", label: "Martes 14/7", time: "18:00 a 20:30 hs", displayDay: "Martes 14 de Julio" },
+        { id: "2026-07-15", label: "Miércoles 15/7", time: "18:00 a 20:30 hs", displayDay: "Miércoles 15 de Julio" },
+        { id: "2026-07-16", label: "Jueves 16/7", time: "18:00 a 20:30 hs", displayDay: "Jueves 16 de Julio" },
+        { id: "2026-07-17", label: "Viernes 17/7", time: "18:00 a 20:30 hs", displayDay: "Viernes 17 de Julio" },
+        { id: "2026-07-18", label: "Sábado 18/7", time: "09:30 a 14:30 hs", displayDay: "Sábado 18 de Julio" },
+        { id: "2026-07-19", label: "Domingo 19/7", time: "09:30 a 14:30 hs", displayDay: "Domingo 19 de Julio", noCancha2: true }
+      ];
+
+      const COLLABORATORS = ["Joaco", "Fusche", "MartinC", "MartinD", "Fortu", "Garu", "Facu", "Bar", "Todos"];
+
+      // Estado local
+      let attendance = {}; // { "Fecha|Cancha": "Colaborador" }
+      let sales = {};      // { "Fecha|Cancha": { registrador, paquetes, efectivo, cbu } }
+
+      // Cargar al iniciar
+      window.addEventListener('DOMContentLoaded', () => {
+        setupBaseUrl();
+        loadAllData();
+      });
+
+      // Obtiene la URL de la Web App para volver a asistencia y punto de venta
+      function setupBaseUrl() {
+        if (typeof google !== 'undefined' && google.script && google.script.run) {
+          google.script.run
+            .withSuccessHandler(url => {
+              document.getElementById('btnAsistencia').href = url + '?page=asistencia';
+              const btnPv = document.getElementById('btnPuntoVenta');
+              if (btnPv) btnPv.href = url + '?page=puntoventa';
+            })
+            .getWebAppUrl();
+        }
+      }
+
+      // Carga paralela de datos de asistencia y de ventas
+      function loadAllData() {
+        showToast("Cargando información...", "loading");
+        
+        let loadedCount = 0;
+        const checkFinished = () => {
+          loadedCount++;
+          if (loadedCount === 2) {
+            renderDashboard();
+            showToast("✓ Datos cargados", "success");
+          }
+        };
+
+        if (typeof google !== 'undefined' && google.script && google.script.run) {
+          // Asistencia
+          google.script.run
+            .withSuccessHandler(data => {
+              attendance = data || {};
+              checkFinished();
+            })
+            .withFailureHandler(err => {
+              showToast("❌ Error al cargar asistencia: " + err.message, "error");
+            })
+            .getAsistenciaData();
+
+          // Ventas
+          google.script.run
+            .withSuccessHandler(data => {
+              sales = data || {};
+              checkFinished();
+            })
+            .withFailureHandler(err => {
+              showToast("❌ Error al cargar ventas: " + err.message, "error");
+            })
+            .getVentasData();
+        } else {
+          // Datos Mock locales para desarrollo
+          console.warn("Entorno local/offline. Usando datos Mock.");
+          attendance = {
+            "2026-07-11|Cancha 1": "Joaco",
+            "2026-07-11|Cancha 2": "Caro",
+            "2026-07-14|Cancha 1": "Fusche"
+          };
+          sales = {
+            "2026-07-11|Cancha 1": [
+              { id: "ID-MOCK-1", registrador: "Joaco", paquetes: 95, efectivo: 28500, cbu: 57000 },
+              { id: "ID-MOCK-2", registrador: "Caro", paquetes: 10, efectivo: 3000, cbu: 0 }
+            ]
+          };
+          setTimeout(() => {
+            checkFinished();
+            checkFinished();
+          }, 800);
+        }
+      }
+
+      // Renderiza totales de caja y la grilla de turnos
+      function renderDashboard() {
+        renderFinancialTotals();
+        renderSalesGrid();
+      }
+
+      // Calcula y formatea totales globales
+      function renderFinancialTotals() {
+        let totalPaqVal = 0;
+        let totalEfVal = 0;
+        let totalCbuVal = 0;
+
+        Object.keys(sales).forEach(key => {
+          const records = sales[key] || [];
+          records.forEach(record => {
+            totalPaqVal += record.paquetes || 0;
+            totalEfVal += record.efectivo || 0;
+            totalCbuVal += record.cbu || 0;
+          });
+        });
+
+        const currencyFormatter = new Intl.NumberFormat('es-AR', {
+          style: 'currency',
+          currency: 'ARS',
+          minimumFractionDigits: 0
+        });
+
+        document.getElementById('totalPaquetes').textContent = `${totalPaqVal} paq`;
+        document.getElementById('totalEfectivo').textContent = currencyFormatter.format(totalEfVal);
+        document.getElementById('totalCbu').textContent = currencyFormatter.format(totalCbuVal);
+      }
+
+      // Dibuja la grilla con los turnos activos
+      function renderSalesGrid() {
+        const container = document.getElementById('salesContainer');
+        container.innerHTML = '';
+
+        const currencyFormatter = new Intl.NumberFormat('es-AR', {
+          style: 'currency',
+          currency: 'ARS',
+          minimumFractionDigits: 0
+        });
+
+        SHIFTS_CONFIG.forEach(day => {
+          const courts = day.noCancha2 ? ["Cancha 1"] : ["Cancha 1", "Cancha 2"];
+          courts.forEach(court => {
+            const key = `${day.id}|${court}`;
+            const plannedSeller = attendance[key] || '';
+            
+            let badgesHtml = '';
+            if (plannedSeller) {
+              const sellers = plannedSeller.split(',').map(s => s.trim()).filter(Boolean);
+              sellers.forEach(seller => {
+                const style = getColabBadgeStyle(seller);
+                badgesHtml += `
+                  <span class="px-2 py-0.5 rounded-md text-[10px] font-bold ${style}">
+                    ${seller}
+                  </span>
+                `;
+              });
+            } else {
+              badgesHtml = `
+                <span class="px-2 py-0.5 rounded-md text-[10px] font-bold badge-empty">
+                  Sin Asignar
+                </span>
+              `;
+            }
+
+            const records = sales[key] || []; // Array: [ { id, registrador, paquetes, efectivo, cbu }, ... ]
+
+            // Calcular totales de este turno
+            let totalPaqTurno = 0;
+            let totalEfTurno = 0;
+            let totalCbuTurno = 0;
+            records.forEach(r => {
+              totalPaqTurno += r.paquetes || 0;
+              totalEfTurno += r.efectivo || 0;
+              totalCbuTurno += r.cbu || 0;
+            });
+            const totalRecaudadoTurno = totalEfTurno + totalCbuTurno;
+
+            const card = document.createElement('div');
+            // Si tiene caja(s), borde sutil. Si no tiene, borde dashed.
+            card.className = records.length > 0 
+              ? 'bg-slate-900/60 border border-slate-800/80 backdrop-blur-md rounded-2xl p-5 flex flex-col justify-between hover:border-slate-700/60 transition shadow-lg min-h-[320px]'
+              : 'bg-slate-900/30 border border-dashed border-slate-800 rounded-2xl p-5 flex flex-col justify-between hover:border-slate-700/60 transition shadow-lg min-h-[320px]';
+
+            // Cabecera del turno
+            let cardHtml = `
+              <div class="space-y-1.5 mb-3">
+                <div class="flex justify-between items-start">
+                  <h3 class="font-bold text-white text-base">${day.label}</h3>
+                  <span class="px-2 py-0.5 rounded-lg text-[10px] font-bold uppercase tracking-wider bg-slate-800 border border-slate-700 text-slate-300 flex items-center gap-1">
+                    🏑 ${court}
+                  </span>
+                </div>
+                <p class="text-xs text-slate-400 flex items-center">
+                  <svg class="w-3.5 h-3.5 mr-1 text-slate-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                  </svg>
+                  ${day.time}
+                </p>
+                <div class="pt-1 flex flex-wrap items-center gap-1.5 border-b border-slate-800/60 pb-3">
+                  <span class="text-[10px] text-slate-500 font-semibold uppercase mr-1">Planificado:</span>
+                  ${badgesHtml}
+                </div>
+              </div>
+            `;
+
+            // Cuerpo del turno (Datos de ventas)
+            if (records.length > 0) {
+              cardHtml += `
+                <div class="space-y-3 flex-grow max-h-[190px] overflow-y-auto pr-1 select-none">
+              `;
+              
+              records.forEach(record => {
+                const regBadgeStyle = getColabBadgeStyle(record.registrador);
+                cardHtml += `
+                  <div class="bg-slate-950/40 border border-slate-800/50 rounded-xl p-2.5 space-y-1">
+                    <div class="flex justify-between items-center border-b border-slate-900/60 pb-1">
+                      <span class="px-1.5 py-0.5 rounded text-[9px] font-bold ${regBadgeStyle}">
+                        👤 ${record.registrador}
+                      </span>
+                      <button 
+                        onclick="openCajaModal('${day.id}', '${court}', '${day.displayDay}', '${record.id}')"
+                        class="text-[10px] text-indigo-400 hover:text-indigo-300 font-bold flex items-center space-x-0.5"
+                      >
+                        <span>✏️ Editar</span>
+                      </button>
+                    </div>
+                    <div class="grid grid-cols-3 gap-1 text-[10px] text-slate-400 pt-0.5">
+                      <div>
+                        <span class="block text-[8px] text-slate-600 uppercase font-semibold">Paquetes</span>
+                        <span class="font-bold text-slate-300">${record.paquetes} u</span>
+                      </div>
+                      <div>
+                        <span class="block text-[8px] text-slate-600 uppercase font-semibold">Efectivo</span>
+                        <span class="font-semibold text-emerald-400/90">${currencyFormatter.format(record.efectivo)}</span>
+                      </div>
+                      <div>
+                        <span class="block text-[8px] text-slate-600 uppercase font-semibold">CBU</span>
+                        <span class="font-semibold text-sky-400/90">${currencyFormatter.format(record.cbu)}</span>
+                      </div>
+                    </div>
+                  </div>
+                `;
+              });
+
+              cardHtml += `
+                </div>
+                
+                <!-- Totales Acumulados Turno -->
+                <div class="border-t border-slate-800/60 pt-2.5 mt-2.5 space-y-1 text-[11px] text-slate-400">
+                  <div class="flex justify-between font-medium">
+                    <span>📦 Total Paquetes:</span>
+                    <span class="text-indigo-300 font-bold">${totalPaqTurno} u</span>
+                  </div>
+                  <div class="flex justify-between font-bold text-white border-t border-slate-950/80 pt-1">
+                    <span>💰 Total Recaudado:</span>
+                    <span>${currencyFormatter.format(totalRecaudadoTurno)}</span>
+                  </div>
+                </div>
+                
+                <div class="pt-3">
+                  <button 
+                    onclick="openCajaModal('${day.id}', '${court}', '${day.displayDay}')"
+                    class="w-full py-2 bg-indigo-600/10 hover:bg-indigo-600/20 border border-indigo-500/20 text-indigo-400 hover:text-indigo-300 font-bold text-xs rounded-xl transition flex items-center justify-center space-x-1"
+                  >
+                    <span>➕ Agregar Otra Caja</span>
+                  </button>
+                </div>
+              `;
+            } else {
+              cardHtml += `
+                <div class="py-8 flex-grow flex flex-col justify-center items-center text-center">
+                  <span class="text-slate-500 text-[10px] font-bold uppercase tracking-wider mb-1">Sin Registros</span>
+                  <p class="text-slate-600 text-[10px] max-w-[160px]">No hay cajas reportadas para este turno.</p>
+                </div>
+                
+                <div class="pt-3">
+                  <button 
+                    onclick="openCajaModal('${day.id}', '${court}', '${day.displayDay}')"
+                    class="w-full py-2 bg-indigo-600/20 hover:bg-indigo-600/35 border border-indigo-500/35 text-indigo-300 hover:text-white font-bold text-xs rounded-xl transition flex items-center justify-center space-x-1"
+                  >
+                    <span>➕ Registrar Caja</span>
+                  </button>
+                </div>
+              `;
+            }
+
+            card.innerHTML = cardHtml;
+            container.appendChild(card);
+          });
+        });
+      }
+
+      // Retorna la clase CSS del badge según el colaborador
+      function getColabBadgeStyle(name) {
+        if (!name) return "badge-empty";
+        const key = name.toLowerCase();
+        if (key === "joaco") return "badge-joaco";
+        if (key === "fusche") return "badge-fusche";
+        if (key === "martinc") return "badge-martinc";
+        if (key === "martind") return "badge-martind";
+        if (key === "fortu") return "badge-fortu";
+        if (key === "garu") return "badge-garu";
+        if (key === "caro") return "badge-caro";
+        if (key === "facu") return "badge-facu";
+        if (key === "todos") return "badge-todos";
+        return "badge-empty";
+      }
+
+      // Abre el modal para registrar/editar caja
+      function openCajaModal(dateId, courtName, displayDay, recordId = '') {
+        const key = `${dateId}|${courtName}`;
+        const records = sales[key] || [];
+        const record = recordId ? records.find(r => r.id === recordId) : null;
+        const scheduledSeller = attendance[key] || '';
+
+        // Resetear form
+        document.getElementById('cajaForm').reset();
+
+        // Cargar campos ocultos
+        document.getElementById('formRecordId').value = recordId;
+        document.getElementById('formFecha').value = dateId;
+        document.getElementById('formCancha').value = courtName;
+
+        // Configurar títulos del modal
+        document.getElementById('modalTitle').textContent = record ? '✏️ Editar Registro de Caja' : '➕ Registrar Caja del Turno';
+        document.getElementById('modalSubtitle').textContent = `${displayDay} — 🏑 ${courtName}`;
+        
+        // Mostrar responsable planificado por asistencia
+        let plannedHtml = '👤 Planificado en Asistencia: ';
+        if (scheduledSeller) {
+          const sellers = scheduledSeller.split(',').map(s => s.trim()).filter(Boolean);
+          sellers.forEach(seller => {
+            const style = getColabBadgeStyle(seller);
+            plannedHtml += `<span class="px-2 py-0.5 rounded-md text-[11px] font-bold ${style} mr-1">${seller}</span>`;
+          });
+        } else {
+          plannedHtml += `<span class="px-2 py-0.5 rounded-md text-[11px] font-bold badge-empty">Sin Asignar</span>`;
+        }
+        document.getElementById('modalPlanned').innerHTML = plannedHtml;
+
+        // Pre-completar campos
+        if (record) {
+          document.getElementById('formRegistrador').value = record.registrador;
+          document.getElementById('formPaquetes').value = record.paquetes;
+          document.getElementById('formEfectivo').value = record.efectivo;
+          document.getElementById('formCbu').value = record.cbu;
+        } else {
+          // Si es nuevo, pre-selecciona al primer colaborador asignado por asistencia si existe
+          const firstSeller = scheduledSeller.split(',').map(s => s.trim()).filter(Boolean)[0] || '';
+          if (COLLABORATORS.includes(firstSeller)) {
+            document.getElementById('formRegistrador').value = firstSeller;
+          } else {
+            document.getElementById('formRegistrador').value = "";
+          }
+        }
+
+        // Mostrar modal
+        document.getElementById('cajaModal').classList.remove('hidden');
+      }
+
+      // Cierra el modal
+      function closeModal() {
+        document.getElementById('cajaModal').classList.add('hidden');
+      }
+
+      // Enviar el formulario a Google Sheets
+      document.getElementById('cajaForm').addEventListener('submit', (e) => {
+        e.preventDefault();
+
+        const recordId = document.getElementById('formRecordId').value;
+        const dateId = document.getElementById('formFecha').value;
+        const courtName = document.getElementById('formCancha').value;
+        const registrador = document.getElementById('formRegistrador').value;
+        const paquetes = parseInt(document.getElementById('formPaquetes').value) || 0;
+        const efectivo = parseInt(document.getElementById('formEfectivo').value) || 0;
+        const cbu = parseInt(document.getElementById('formCbu').value) || 0;
+
+        // Visual de carga en botón
+        setLoading(true);
+        showToast("Registrando ventas en la planilla...", "loading");
+
+        if (typeof google !== 'undefined' && google.script && google.script.run) {
+          google.script.run
+            .withSuccessHandler(response => {
+              // Cargar de vuelta todos los datos para actualizar IDs y sumas
+              loadAllData();
+              setLoading(false);
+              closeModal();
+              showToast("✓ Caja guardada con éxito", "success");
+            })
+            .withFailureHandler(err => {
+              setLoading(false);
+              showToast("❌ Error al registrar caja: " + err.message, "error");
+            })
+            .guardarVenta(recordId, dateId, courtName, registrador, paquetes, efectivo, cbu);
+        } else {
+          // Mock local offline
+          setTimeout(() => {
+            const key = `${dateId}|${courtName}`;
+            if (!sales[key]) sales[key] = [];
+            
+            if (recordId) {
+              const idx = sales[key].findIndex(r => r.id === recordId);
+              if (idx !== -1) {
+                sales[key][idx] = { id: recordId, registrador, paquetes, efectivo, cbu };
+              }
+            } else {
+              const newId = "ID-MOCK-" + new Date().getTime();
+              sales[key].push({ id: newId, registrador, paquetes, efectivo, cbu });
+            }
+
+            setLoading(false);
+            closeModal();
+            renderDashboard();
+            showToast("✓ Caja guardada con éxito (MOCK)", "success");
+          }, 800);
+        }
+      });
+
+      // Maneja estado visual de carga
+      function setLoading(isLoading) {
+        const btn = document.getElementById('submitBtn');
+        const text = document.getElementById('submitBtnText');
+        const loader = document.getElementById('submitBtnLoader');
+        const formSelect = document.getElementById('formRegistrador');
+        const inputs = document.querySelectorAll('#cajaForm input, #cajaForm select, #cajaForm button');
+
+        btn.disabled = isLoading;
+        text.classList.toggle('hidden', isLoading);
+        loader.classList.toggle('hidden', !isLoading);
+
+        inputs.forEach(el => {
+          el.disabled = isLoading;
+          if (isLoading) {
+            el.classList.add('opacity-50');
+          } else {
+            el.classList.remove('opacity-50');
+          }
+        });
+      }
+
+      // Muestra notificaciones flotantes (toast)
+      let toastTimeout;
+      function showToast(message, type = "success") {
+        const toast = document.getElementById('toast');
+        const toastIcon = document.getElementById('toastIcon');
+        const toastMessage = document.getElementById('toastMessage');
+
+        if (toastTimeout) {
+          clearTimeout(toastTimeout);
+        }
+
+        // Icono según tipo
+        if (type === "loading") {
+          toastIcon.innerHTML = `<div class="loader-mini !border-t-indigo-400"></div>`;
+        } else if (type === "success") {
+          toastIcon.innerHTML = "✅";
+        } else if (type === "error") {
+          toastIcon.innerHTML = "❌";
+        } else {
+          toastIcon.innerHTML = "ℹ️";
+        }
+
+        toastMessage.textContent = message;
+        
+        toast.classList.remove('translate-y-20', 'opacity-0');
+        toast.classList.add('translate-y-0', 'opacity-100');
+
+        if (type !== "loading") {
+          toastTimeout = setTimeout(() => {
+            toast.classList.remove('translate-y-0', 'opacity-100');
+            toast.classList.add('translate-y-20', 'opacity-0');
+          }, 3500);
+        }
+      }
+    </script>
+  </body>
+</html>

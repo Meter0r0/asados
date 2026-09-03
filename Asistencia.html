@@ -1,0 +1,691 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <base target="_top">
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Coordinación de Asistencia - ORC</title>
+    <!-- Google Fonts Outfit -->
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+      tailwind.config = {
+        theme: {
+          extend: {
+            fontFamily: {
+              sans: ['Outfit', 'sans-serif'],
+            },
+          },
+        },
+      }
+    </script>
+    <style>
+      body {
+        font-family: 'Outfit', sans-serif;
+        background: radial-gradient(circle at top, #0f172a 0%, #020617 100%);
+      }
+
+      /* Scrollbar personalizada */
+      ::-webkit-scrollbar {
+        width: 6px;
+        height: 6px;
+      }
+      ::-webkit-scrollbar-track {
+        background: #020617;
+      }
+      ::-webkit-scrollbar-thumb {
+        background: #1e293b;
+        border-radius: 4px;
+      }
+      ::-webkit-scrollbar-thumb:hover {
+        background: #334155;
+      }
+
+      /* Spinner animado */
+      .loader-mini {
+        border: 2px solid rgba(255, 255, 255, 0.1);
+        border-top-color: #38bdf8;
+        border-radius: 50%;
+        width: 1rem;
+        height: 1rem;
+        animation: spin 1s linear infinite;
+      }
+      @keyframes spin {
+        0% { transform: rotate(0deg); }
+        100% { transform: rotate(360deg); }
+      }
+
+      /* Estilos para celdas/selectores según el colaborador asignado */
+      .colab-select {
+        transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+      }
+      
+      /* Resetear los selects nativos para un look premium */
+      select.clean-select {
+        -webkit-appearance: none;
+        -moz-appearance: none;
+        appearance: none;
+        background-image: url("data:image/svg+xml;charset=utf-8,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 20 20'%3E%3Cpath stroke='%2394a3b8' stroke-linecap='round' stroke-linejoin='round' stroke-width='1.5' d='M6 8l4 4 4-4'/%3E%3C/svg%3E");
+        background-position: right 0.75rem center;
+        background-repeat: no-repeat;
+        background-size: 1.25rem;
+        padding-right: 2.25rem;
+      }
+
+      /* Mapeo de estilos dinámicos */
+      .style-empty {
+        background-color: rgba(30, 41, 59, 0.2);
+        color: #64748b;
+        border: 1px dashed rgba(71, 85, 105, 0.4);
+        opacity: 0.65;
+      }
+      .style-empty:hover {
+        border-color: rgba(148, 163, 184, 0.4);
+        background-color: rgba(30, 41, 59, 0.4);
+        opacity: 1;
+      }
+      .style-warning {
+        background-color: rgba(220, 38, 38, 0.08);
+        color: #fca5a5;
+        border: 1.5px dashed rgba(239, 68, 68, 0.45);
+      }
+      .style-warning:hover {
+        border-color: rgba(239, 68, 68, 0.7);
+        background-color: rgba(220, 38, 38, 0.15);
+      }
+      .style-joaco {
+        background-color: rgba(7, 89, 133, 0.2);
+        color: #7dd3fc;
+        border: 1px solid rgba(14, 165, 233, 0.4);
+      }
+      .style-fusche {
+        background-color: rgba(134, 25, 143, 0.2);
+        color: #f0abfc;
+        border: 1px solid rgba(217, 70, 239, 0.4);
+      }
+      .style-martinc {
+        background-color: rgba(6, 95, 70, 0.2);
+        color: #6ee7b7;
+        border: 1px solid rgba(16, 185, 129, 0.4);
+      }
+      .style-fortu {
+        background-color: rgba(154, 52, 18, 0.2);
+        color: #fdba74;
+        border: 1px solid rgba(249, 115, 22, 0.4);
+      }
+      .style-garu {
+        background-color: rgba(146, 64, 14, 0.2);
+        color: #fde047;
+        border: 1px solid rgba(234, 179, 8, 0.4);
+      }
+      .style-caro {
+        background-color: rgba(159, 18, 57, 0.2);
+        color: #fda4af;
+        border: 1px solid rgba(244, 63, 94, 0.4);
+      }
+      .style-martind {
+        background-color: rgba(109, 40, 217, 0.15);
+        color: #ddd6fe;
+        border: 1px solid rgba(139, 92, 246, 0.4);
+      }
+      .style-facu {
+        background-color: rgba(13, 148, 136, 0.2);
+        color: #2dd4bf;
+        border: 1px solid rgba(20, 184, 166, 0.4);
+      }
+      .style-todos {
+        background-color: rgba(148, 163, 184, 0.15);
+        color: #cbd5e1;
+        border: 1px solid rgba(148, 163, 184, 0.4);
+      }
+      .style-bar {
+        background-color: rgba(190, 24, 93, 0.2);
+        color: #f9a8d4;
+        border: 1px solid rgba(219, 39, 119, 0.4);
+      }
+
+      /* Estilo de opciones */
+      select option {
+        background-color: #0f172a;
+        color: #f8fafc;
+      }
+    </style>
+  </head>
+  <body class="min-h-screen text-slate-100 flex flex-col antialiased">
+    
+    <!-- Toast Notification -->
+    <div id="toast" class="fixed bottom-5 right-5 z-50 transform translate-y-20 opacity-0 transition-all duration-300 pointer-events-none">
+      <div class="bg-slate-900 border border-slate-700 text-slate-100 px-4 py-3 rounded-lg shadow-2xl flex items-center space-x-2">
+        <span id="toastIcon">🔄</span>
+        <span id="toastMessage" class="text-sm font-medium">Actualizando...</span>
+      </div>
+    </div>
+
+    <!-- Main Container -->
+    <div class="w-full max-w-5xl mx-auto px-4 py-8 flex-grow flex flex-col space-y-8">
+      
+      <!-- Top Navigation & Title -->
+      <div class="flex flex-col sm:flex-row justify-between items-center bg-slate-900/60 border border-slate-800/80 backdrop-blur-md rounded-2xl p-6 gap-4">
+        <div class="text-center sm:text-left">
+          <div class="flex items-center justify-center sm:justify-start space-x-2">
+            <span class="text-3xl">🏑</span>
+            <h1 class="text-2xl font-bold tracking-tight text-white">Organizador de Asistencia</h1>
+          </div>
+          <p class="text-slate-400 text-sm mt-1">Vendedores de Figuritas en el ORC — 11 al 19 de Julio, 2026</p>
+        </div>
+        <div class="flex space-x-2">
+          <a id="btnPuntoVenta" href="#" target="_top" class="inline-flex items-center space-x-1.5 px-4 py-2.5 bg-slate-800 hover:bg-slate-700 border border-slate-700 text-slate-300 rounded-xl text-sm font-semibold transition shadow-lg shadow-indigo-950/20">
+            <span>🛒 Punto de Venta</span>
+          </a>
+          <a id="btnDashboard" href="#" target="_top" class="inline-flex items-center space-x-1.5 px-4 py-2.5 bg-slate-800 hover:bg-slate-700 border border-slate-700 text-slate-300 rounded-xl text-sm font-semibold transition shadow-lg shadow-indigo-950/20">
+            <span>📊 Dashboard</span>
+          </a>
+          <a id="btnHistorial" href="#" target="_top" class="inline-flex items-center space-x-1.5 px-4 py-2.5 bg-slate-800 hover:bg-slate-700 border border-slate-700 text-slate-300 rounded-xl text-sm font-semibold transition shadow-lg shadow-indigo-950/20">
+            <span>📋 Historial</span>
+          </a>
+          <a id="btnPreventa" href="#" target="_top" class="inline-flex items-center space-x-1.5 px-4 py-2.5 bg-slate-800 hover:bg-slate-700 border border-slate-700 text-slate-300 rounded-xl text-sm font-semibold transition shadow-lg shadow-indigo-950/20">
+            <span>📢 Reserva de Álbumes</span>
+          </a>
+        </div>
+      </div>
+
+      <!-- Collaborators Stats Board -->
+      <div class="bg-slate-900/40 border border-slate-800/60 backdrop-blur-md rounded-2xl p-6">
+        <h2 class="text-xs font-semibold text-slate-400 uppercase tracking-widest mb-4">Reparto de Turnos por Colaborador</h2>
+        <div id="statsGrid" class="grid grid-cols-2 sm:grid-cols-4 md:grid-cols-8 gap-4">
+          <!-- Dinámico -->
+          <div class="animate-pulse bg-slate-800/30 h-20 rounded-xl"></div>
+          <div class="animate-pulse bg-slate-800/30 h-20 rounded-xl"></div>
+          <div class="animate-pulse bg-slate-800/30 h-20 rounded-xl"></div>
+          <div class="animate-pulse bg-slate-800/30 h-20 rounded-xl"></div>
+          <div class="animate-pulse bg-slate-800/30 h-20 rounded-xl"></div>
+          <div class="animate-pulse bg-slate-800/30 h-20 rounded-xl"></div>
+          <div class="animate-pulse bg-slate-800/30 h-20 rounded-xl"></div>
+        </div>
+      </div>
+
+      <!-- Schedule Grid -->
+      <div>
+        <div class="flex items-center justify-between mb-6">
+          <h2 class="text-lg font-bold text-white flex items-center space-x-2">
+            <span>📅 Cronograma de Turnos</span>
+          </h2>
+          <span class="text-xs text-slate-500 font-medium">Los turnos se guardan automáticamente al cambiarlos</span>
+        </div>
+
+        <div id="shiftsContainer" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          <!-- Dinámico: Tarjetas de Días -->
+          <div class="col-span-full py-20 flex flex-col items-center justify-center space-y-4">
+            <div class="loader-mini !w-8 !h-8 !border-t-sky-400"></div>
+            <p class="text-slate-400 text-sm">Cargando turnos desde Google Sheets...</p>
+          </div>
+        </div>
+      </div>
+
+      <!-- Footer Info -->
+      <div class="text-center py-4">
+        <p id="footerText" class="text-slate-600 text-xs">Vendedores de Figuritas ORC • Versión 2.0 • Sin Autenticación Obligatoria</p>
+      </div>
+
+    </div>
+
+    <!-- Logic Script -->
+    <script>
+      // Configuración de Turnos Activos
+      const SHIFTS_CONFIG = [
+        { id: "2026-07-09", label: "Jueves 9/7", time: "12:30 a 14:00 hs", isWeekend: false },
+        { id: "2026-07-10", label: "Viernes 10/7", time: "18:00 a 20:30 hs", isWeekend: false },
+        { id: "2026-07-11", label: "Sábado 11/7", time: "09:30 a 14:30 hs", isWeekend: true },
+        { id: "2026-07-12", label: "Domingo 12/7", time: "09:30 a 14:30 hs", isWeekend: true, noCancha2: true },
+        { id: "2026-07-14", label: "Martes 14/7", time: "18:00 a 20:30 hs", isWeekend: false },
+        { id: "2026-07-15", label: "Miércoles 15/7", time: "18:00 a 20:30 hs", isWeekend: false },
+        { id: "2026-07-16", label: "Jueves 16/7", time: "18:00 a 20:30 hs", isWeekend: false },
+        { id: "2026-07-17", label: "Viernes 17/7", time: "18:00 a 20:30 hs", isWeekend: false },
+        { id: "2026-07-18", label: "Sábado 18/7", time: "09:30 a 14:30 hs", isWeekend: true },
+        { id: "2026-07-19", label: "Domingo 19/7", time: "09:30 a 14:30 hs", isWeekend: true, noCancha2: true }
+      ];
+
+      // Colaboradores Oficiales
+      const COLLABORATORS = ["Joaco", "Fusche", "MartinC", "MartinD", "Fortu", "Garu", "Facu", "Bar", "Todos"];
+
+      // Iniciales e Iconos
+      const COLAB_MAP = {
+        "Joaco": { initial: "Jo", style: "style-joaco" },
+        "Fusche": { initial: "Fu", style: "style-fusche" },
+        "MartinC": { initial: "Ma", style: "style-martinc" },
+        "MartinD": { initial: "MD", style: "style-martind" },
+        "Fortu": { initial: "Fo", style: "style-fortu" },
+        "Garu": { initial: "Ga", style: "style-garu" },
+        "Caro": { initial: "Ca", style: "style-caro" },
+        "Facu": { initial: "Fa", style: "style-facu" },
+        "Bar": { initial: "Ba", style: "style-bar" },
+        "Todos": { initial: "T", style: "style-todos" },
+        "": { initial: "—", style: "style-empty" }
+      };
+
+      // Estado local
+      let assignments = {}; // Formato: { "YYYY-MM-DD|Cancha 1": "Nombre", ... }
+
+      // Cargar al iniciar
+      window.addEventListener('DOMContentLoaded', () => {
+        setupBaseUrl();
+        loadData();
+        checkScriptInfo();
+      });
+
+      function checkScriptInfo() {
+        if (typeof google !== 'undefined' && google.script && google.script.run) {
+          google.script.run
+            .withSuccessHandler(info => {
+              const footer = document.getElementById('footerText');
+              if (footer) {
+                footer.textContent += ` | ID: ...${info.scriptId.substring(info.scriptId.length - 8)} | Build: ${info.version}`;
+              }
+            })
+            .getScriptInfo();
+        }
+      }
+
+      // Obtiene la URL de la Web App para las páginas secundarias
+      function setupBaseUrl() {
+        if (typeof google !== 'undefined' && google.script && google.script.run) {
+          google.script.run
+            .withSuccessHandler(url => {
+              const btnV = document.getElementById('btnVentas');
+              if (btnV) btnV.href = url + '?page=ventas';
+              const btnPv = document.getElementById('btnPuntoVenta');
+              if (btnPv) btnPv.href = url + '?page=puntoventa';
+              const btnDb = document.getElementById('btnDashboard');
+              if (btnDb) btnDb.href = url + '?page=dashboard';
+              const btnHs = document.getElementById('btnHistorial');
+              if (btnHs) btnHs.href = url + '?page=historial';
+              const btnPr = document.getElementById('btnPreventa');
+              if (btnPr) btnPr.href = 'https://script.google.com/macros/s/AKfycbz-fgBkbynC_yw8R8t2bs7xNfpHJI4JwsE0pjtQD2Zthd9uqtNB22HKFyuurwZxqakF/exec';
+            })
+            .getWebAppUrl();
+        }
+      }
+
+      // Trae los datos de Google Sheets
+      function loadData() {
+        if (typeof google !== 'undefined' && google.script && google.script.run) {
+          google.script.run
+            .withSuccessHandler(data => {
+              assignments = data || {};
+              renderDashboard();
+            })
+            .withFailureHandler(err => {
+              showToast("❌ Error al cargar datos: " + err.message, "error");
+            })
+            .getAsistenciaData();
+        } else {
+          // Datos de prueba locales para desarrollo offline
+          console.warn("Ejecutando en entorno local/offline. Cargando datos Mock.");
+          assignments = {
+            "2026-07-11|Cancha 1": "Joaco",
+            "2026-07-11|Cancha 2": "Caro",
+            "2026-07-14|Cancha 1": "Fusche",
+            "2026-07-15|Cancha 2": "MartinC",
+            "2026-07-18|Cancha 1": "Garu"
+          };
+          setTimeout(renderDashboard, 1000);
+        }
+      }
+
+      // Renderiza toda la pantalla
+      function renderDashboard() {
+        renderStats();
+        renderShiftsGrid();
+      }
+
+      // Calcula y dibuja las estadísticas
+      function renderStats() {
+        const statsGrid = document.getElementById('statsGrid');
+        statsGrid.innerHTML = '';
+
+        // Contar turnos
+        const counts = {};
+        COLLABORATORS.forEach(c => counts[c] = 0);
+        
+        Object.keys(assignments).forEach(key => {
+          const colabVal = assignments[key];
+          if (colabVal) {
+            const colabList = colabVal.split(',').map(s => s.trim()).filter(Boolean);
+            colabList.forEach(colab => {
+              if (COLLABORATORS.includes(colab)) {
+                counts[colab]++;
+              }
+            });
+          }
+        });
+
+        // Dibujar tarjetas de stats
+        COLLABORATORS.forEach(colab => {
+          const info = COLAB_MAP[colab];
+          const count = counts[colab] || 0;
+          
+          const card = document.createElement('div');
+          card.className = `flex flex-col items-center justify-center p-4 rounded-xl transition-all duration-300 ${info.style} bg-opacity-10 backdrop-blur-sm shadow-md border-opacity-30`;
+          card.innerHTML = `
+            <div class="w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold uppercase ${info.style} mb-1 bg-opacity-30 shadow-inner">
+              ${info.initial}
+            </div>
+            <span class="text-sm font-semibold">${colab}</span>
+            <span class="text-xs opacity-75 mt-0.5">${count} ${count === 1 ? 'turno' : 'turnos'}</span>
+          `;
+          statsGrid.appendChild(card);
+        });
+      }
+
+      // Dibuja la grilla de turnos
+      function renderShiftsGrid() {
+        const container = document.getElementById('shiftsContainer');
+        container.innerHTML = '';
+
+        SHIFTS_CONFIG.forEach(day => {
+          const card = document.createElement('div');
+          card.id = `card-${day.id}`;
+          
+          // Selectores para Cancha 1 y Cancha 2
+          const c1Key = `${day.id}|Cancha 1`;
+          const c2Key = `${day.id}|Cancha 2`;
+
+          const c1Val = assignments[c1Key] || '';
+          const c2Val = assignments[c2Key] || '';
+
+          const isComplete = c1Val !== '' && (day.noCancha2 || c2Val !== '');
+          
+          // Estilo de la tarjeta del día (simil rojo si está incompleto)
+          const styleComplete = 'bg-slate-900/60 border border-slate-800/80 backdrop-blur-md rounded-2xl p-5 flex flex-col justify-between space-y-4 hover:border-slate-700/60 transition-all duration-300 shadow-lg';
+          const styleIncomplete = 'bg-rose-950/20 border border-rose-900/40 backdrop-blur-md rounded-2xl p-5 flex flex-col justify-between space-y-4 hover:border-rose-700/50 transition-all duration-300 shadow-lg';
+          
+          card.className = isComplete ? styleComplete : styleIncomplete;
+          
+          // Encabezado del día
+          const headerHtml = `
+            <div class="flex justify-between items-start border-b border-slate-800/60 pb-3">
+              <div>
+                <h3 class="font-bold text-white text-base">${day.label}</h3>
+                <p class="text-xs text-slate-400 mt-0.5 flex items-center">
+                  <svg class="w-3.5 h-3.5 mr-1 text-slate-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                  </svg>
+                  ${day.time}
+                </p>
+              </div>
+              <span class="px-2.5 py-0.5 rounded-full text-[10px] font-bold tracking-wider uppercase ${day.isWeekend ? 'bg-indigo-500/10 text-indigo-400 border border-indigo-500/30' : 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/30'}">
+                ${day.isWeekend ? 'Finde' : 'Semana'}
+              </span>
+            </div>
+          `;
+
+          let cancha2Html = '';
+          if (day.noCancha2) {
+            cancha2Html = `
+              <div class="flex flex-col space-y-1 opacity-40">
+                <div class="flex justify-between items-center text-xs font-semibold text-slate-500 px-1">
+                  <span>🏑 Cancha 2</span>
+                </div>
+                <div class="px-3.5 py-2 text-xs font-semibold rounded-xl bg-slate-950/40 text-slate-600 border border-slate-900 text-center select-none">
+                  🚫 Sin Actividad
+                </div>
+              </div>
+            `;
+          } else {
+            cancha2Html = `
+              <div class="flex flex-col space-y-1">
+                <div class="flex justify-between items-center text-xs font-semibold text-slate-400 px-1">
+                  <span>🏑 Cancha 2</span>
+                  <div id="loader-${day.id}-c2" class="hidden"><div class="loader-mini"></div></div>
+                </div>
+                ${createSelectorHtml(day.id, "Cancha 2", c2Val)}
+              </div>
+            `;
+          }
+
+          const bodyHtml = `
+            <div class="space-y-3.5">
+              <!-- Cancha 1 Slot -->
+              <div class="flex flex-col space-y-1">
+                <div class="flex justify-between items-center text-xs font-semibold text-slate-400 px-1">
+                  <span>🏑 Cancha 1</span>
+                  <div id="loader-${day.id}-c1" class="hidden"><div class="loader-mini"></div></div>
+                </div>
+                ${createSelectorHtml(day.id, "Cancha 1", c1Val)}
+              </div>
+              
+              <!-- Cancha 2 Slot -->
+              ${cancha2Html}
+            </div>
+          `;
+
+          card.innerHTML = headerHtml + bodyHtml;
+          container.appendChild(card);
+        });
+      }
+
+      // Crea el HTML del select estructurado (hasta 3 personas por cancha)
+      function createSelectorHtml(dateId, courtName, selectedValue) {
+        const selectedList = selectedValue ? selectedValue.split(',').map(s => s.trim()).filter(Boolean) : [];
+        const courtId = courtName.replace(' ', '');
+        
+        let html = '<div class="space-y-1.5">';
+        
+        for (let index = 0; index < 3; index++) {
+          const val = selectedList[index] || '';
+          
+          let styleClass = '';
+          if (val === '') {
+            styleClass = index === 0 ? 'style-warning' : 'style-empty';
+          } else {
+            styleClass = COLAB_MAP[val].style;
+          }
+          
+          html += `
+            <div class="relative">
+              <select 
+                id="select-${dateId}-${courtId}-${index}" 
+                class="clean-select colab-select w-full px-3.5 py-2 text-xs font-semibold rounded-xl focus:outline-none focus:ring-2 focus:ring-sky-500 transition-all ${styleClass}" 
+                onchange="onAssignmentChangeMulti('${dateId}', '${courtName}')"
+              >
+                <option value="" ${val === '' ? 'selected' : ''}>⚠️ Sin Asignar</option>
+          `;
+
+          COLLABORATORS.forEach(colab => {
+            html += `<option value="${colab}" ${val === colab ? 'selected' : ''}>👤 ${colab}</option>`;
+          });
+
+          html += `
+              </select>
+            </div>
+          `;
+        }
+        
+        html += '</div>';
+        return html;
+      }
+
+      // Actualiza dinámicamente el estilo de la tarjeta del día según si la asistencia está completa
+      function actualizarEstiloTarjeta(dateId) {
+        const card = document.getElementById(`card-${dateId}`);
+        if (!card) return;
+        
+        const day = SHIFTS_CONFIG.find(d => d.id === dateId);
+        if (!day) return;
+
+        const c1Val = assignments[`${dateId}|Cancha 1`] || '';
+        const c2Val = assignments[`${dateId}|Cancha 2`] || '';
+        const isComplete = c1Val !== '' && (day.noCancha2 || c2Val !== '');
+
+        const styleComplete = 'bg-slate-900/60 border border-slate-800/80 backdrop-blur-md rounded-2xl p-5 flex flex-col justify-between space-y-4 hover:border-slate-700/60 transition-all duration-300 shadow-lg';
+        const styleIncomplete = 'bg-rose-950/20 border border-rose-900/40 backdrop-blur-md rounded-2xl p-5 flex flex-col justify-between space-y-4 hover:border-rose-700/50 transition-all duration-300 shadow-lg';
+
+        card.className = isComplete ? styleComplete : styleIncomplete;
+      }
+
+      // Maneja los cambios de selección agrupando hasta 3 dropdowns
+      function onAssignmentChangeMulti(dateId, courtName) {
+        const courtId = courtName.replace(' ', '');
+        const key = `${dateId}|${courtName}`;
+        const loaderId = `loader-${dateId}-${courtId.toLowerCase()}`;
+        const loaderElement = document.getElementById(loaderId);
+        
+        // Obtener y remover duplicados
+        const values = [];
+        for (let i = 0; i < 3; i++) {
+          const selectEl = document.getElementById(`select-${dateId}-${courtId}-${i}`);
+          if (selectEl && selectEl.value) {
+            const val = selectEl.value;
+            if (!values.includes(val)) {
+              values.push(val);
+            }
+          }
+        }
+        
+        const combinedValue = values.join(', ');
+        
+        // Deshabilitar temporalmente los selectores
+        const selectors = [];
+        for (let i = 0; i < 3; i++) {
+          const el = document.getElementById(`select-${dateId}-${courtId}-${i}`);
+          if (el) {
+            el.disabled = true;
+            selectors.push(el);
+          }
+        }
+        
+        if (loaderElement) {
+          loaderElement.classList.remove('hidden');
+        }
+
+        showToast(`Guardando turno en ${courtName}...`, "loading");
+
+        if (typeof google !== 'undefined' && google.script && google.script.run) {
+          google.script.run
+            .withSuccessHandler(response => {
+              // Actualizar estado local
+              assignments[key] = combinedValue;
+              
+              // Volver a habilitar y asignar estilos correctos (puede haberse colapsado el orden)
+              const updatedList = combinedValue.split(',').map(s => s.trim()).filter(Boolean);
+              selectors.forEach((selectEl, i) => {
+                selectEl.disabled = false;
+                const val = updatedList[i] || '';
+                selectEl.value = val;
+                
+                let newStyle = '';
+                if (val === '') {
+                  newStyle = i === 0 ? 'style-warning' : 'style-empty';
+                } else {
+                  newStyle = COLAB_MAP[val].style;
+                }
+                
+                selectEl.className = selectEl.className
+                  .split(' ')
+                  .filter(c => !c.startsWith('style-'))
+                  .join(' ') + ' ' + newStyle;
+              });
+              
+              if (loaderElement) loaderElement.classList.add('hidden');
+              
+              renderStats();
+              actualizarEstiloTarjeta(dateId);
+              showToast("✓ Cambios guardados correctamente", "success");
+            })
+            .withFailureHandler(err => {
+              // Restaurar estado visual y notificar
+              const originalList = (assignments[key] || '').split(',').map(s => s.trim()).filter(Boolean);
+              selectors.forEach((selectEl, i) => {
+                selectEl.disabled = false;
+                const origVal = originalList[i] || '';
+                selectEl.value = origVal;
+                
+                let newStyle = '';
+                if (origVal === '') {
+                  newStyle = i === 0 ? 'style-warning' : 'style-empty';
+                } else {
+                  newStyle = COLAB_MAP[origVal].style;
+                }
+                
+                selectEl.className = selectEl.className
+                  .split(' ')
+                  .filter(c => !c.startsWith('style-'))
+                  .join(' ') + ' ' + newStyle;
+              });
+              
+              if (loaderElement) loaderElement.classList.add('hidden');
+              showToast("❌ Error al guardar asignación: " + err.message, "error");
+            })
+            .guardarAsistencia(dateId, courtName, combinedValue);
+        } else {
+          // Simulación local offline
+          setTimeout(() => {
+            assignments[key] = combinedValue;
+            
+            const updatedList = combinedValue.split(',').map(s => s.trim()).filter(Boolean);
+            selectors.forEach((selectEl, i) => {
+              selectEl.disabled = false;
+              const val = updatedList[i] || '';
+              selectEl.value = val;
+              
+              let newStyle = '';
+              if (val === '') {
+                newStyle = i === 0 ? 'style-warning' : 'style-empty';
+              } else {
+                newStyle = COLAB_MAP[val].style;
+              }
+              
+              selectEl.className = selectEl.className
+                .split(' ')
+                .filter(c => !c.startsWith('style-'))
+                .join(' ') + ' ' + newStyle;
+            });
+            
+            if (loaderElement) loaderElement.classList.add('hidden');
+            
+            renderStats();
+            actualizarEstiloTarjeta(dateId);
+            showToast("✓ Cambios guardados correctamente (Mock)", "success");
+          }, 800);
+        }
+      }
+
+      // Muestra notificaciones flotantes (toast)
+      let toastTimeout;
+      function showToast(message, type = "success") {
+        const toast = document.getElementById('toast');
+        const toastIcon = document.getElementById('toastIcon');
+        const toastMessage = document.getElementById('toastMessage');
+
+        if (toastTimeout) {
+          clearTimeout(toastTimeout);
+        }
+
+        // Definir icono según el tipo
+        if (type === "loading") {
+          toastIcon.innerHTML = `<div class="loader-mini !border-t-sky-400"></div>`;
+        } else if (type === "success") {
+          toastIcon.innerHTML = "✅";
+        } else if (type === "error") {
+          toastIcon.innerHTML = "❌";
+        } else {
+          toastIcon.innerHTML = "ℹ️";
+        }
+
+        toastMessage.textContent = message;
+        
+        // Animación de entrada
+        toast.classList.remove('translate-y-20', 'opacity-0');
+        toast.classList.add('translate-y-0', 'opacity-100');
+
+        // Ocultar automáticamente si no es carga
+        if (type !== "loading") {
+          toastTimeout = setTimeout(() => {
+            toast.classList.remove('translate-y-0', 'opacity-100');
+            toast.classList.add('translate-y-20', 'opacity-0');
+          }, 3500);
+        }
+      }
+    </script>
+  </body>
+</html>
