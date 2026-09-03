@@ -2,13 +2,17 @@
 <html>
   <head>
     <base target="_top">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
-      /* Spinner personalizado color NARANJA */
+      /* Spinner personalizado */
       .loader {
         border-top-color: #ea580c; /* orange-600 */
         -webkit-animation: spinner 1.5s linear infinite;
         animation: spinner 1.5s linear infinite;
+      }
+      .devolucion-mode .loader {
+        border-top-color: #dc2626; /* red-600 */
       }
       @-webkit-keyframes spinner {
         0% { -webkit-transform: rotate(0deg); }
@@ -24,16 +28,71 @@
         background-color: #1f2937; /* gray-800 */
         color: white;
       }
+
+      /* Toggle Cobro / Devolución */
+      .toggle-container {
+        display: flex;
+        background: #1f2937;
+        border-radius: 8px;
+        padding: 4px;
+        border: 1px solid #374151;
+      }
+      .toggle-btn {
+        flex: 1;
+        padding: 10px 16px;
+        border-radius: 6px;
+        font-weight: 700;
+        font-size: 14px;
+        cursor: pointer;
+        transition: all 0.2s ease;
+        border: none;
+        background: transparent;
+        color: #9ca3af;
+        text-align: center;
+      }
+      .toggle-btn.active-cobro {
+        background: #ea580c;
+        color: white;
+        box-shadow: 0 2px 8px rgba(234, 88, 12, 0.4);
+      }
+      .toggle-btn.active-devolucion {
+        background: #dc2626;
+        color: white;
+        box-shadow: 0 2px 8px rgba(220, 38, 38, 0.4);
+      }
+
+      /* Transición suave del card */
+      .main-card {
+        transition: border-color 0.3s ease;
+      }
+      .devolucion-mode .main-card {
+        border-color: #991b1b;
+      }
     </style>
   </head>
   <body class="bg-black flex items-center justify-center min-h-screen">
     
-    <div class="w-full max-w-lg p-8 space-y-6 bg-gray-900 rounded-xl shadow-2xl m-4 border border-gray-800">
+    <div class="w-full max-w-lg p-8 space-y-6 bg-gray-900 rounded-xl shadow-2xl m-4 border border-gray-800 main-card">
       
       <div class="text-center">
-        <h1 class="text-3xl font-bold text-white">Registro de Cobro</h1>
-        <p class="text-orange-500 mt-2 font-medium">Club Olivos - Cena de Hockey - Categorías 7A, 7B, 6A y 6B (2026)</p>
+        <h1 id="mainTitle" class="text-3xl font-bold text-white">Registro de Cobro</h1>
+        <p class="text-orange-500 mt-2 font-medium mb-3">Club Olivos - Asado 18/6 - Categorías 7A, 7B, 6A y 6B</p>
+        <div class="flex justify-center space-x-2 mt-3">
+          <a id="btnAsistencia" href="#" target="_top" class="inline-flex items-center space-x-1.5 px-3 py-1 bg-slate-800 hover:bg-slate-700 text-slate-300 rounded-md text-xs font-semibold border border-slate-700 transition">
+            <span>📅 Asistencia</span>
+          </a>
+          <a id="btnPuntoVenta" href="#" target="_top" class="inline-flex items-center space-x-1.5 px-3 py-1 bg-slate-800 hover:bg-slate-700 text-slate-300 rounded-md text-xs font-semibold border border-slate-700 transition">
+            <span>🛒 Punto de Venta</span>
+          </a>
+        </div>
       </div>
+
+      <!-- Toggle Cobro / Devolución -->
+      <div class="toggle-container">
+        <button type="button" id="btnCobro" class="toggle-btn active-cobro" onclick="setTipo('cobro')">💰 Cobro</button>
+        <button type="button" id="btnDevolucion" class="toggle-btn" onclick="setTipo('devolucion')">↩️ Devolución</button>
+      </div>
+      <input type="hidden" id="tipo" name="tipo" value="cobro">
 
       <form id="paymentForm" class="space-y-6">
         
@@ -41,7 +100,7 @@
           <label for="cobrador" class="block text-sm font-medium text-gray-300">Cobrador</label>
           <select id="cobrador" name="cobrador" required class="mt-1 block w-full px-3 py-2 bg-gray-800 border border-gray-700 text-white rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-orange-500 sm:text-sm">
             <option value="" disabled selected>Seleccione un cobrador</option>
-            <option>Martin</option>
+            <option>Fer</option>
             <option>Fortu</option>
             <option>Fran</option>
             <option>Augusto</option>
@@ -69,8 +128,8 @@
           <input type="number" id="cantidad" name="cantidad" required min="1" step="1" oninput="updateMontoCalculado()" onchange="updateMontoCalculado()" class="mt-1 block w-full px-3 py-2 bg-gray-800 border border-gray-700 text-white rounded-md shadow-sm placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-orange-500 sm:text-sm" placeholder="Incluído quien paga">
         </div>
 
-        <div class="p-4 bg-gray-800 border border-gray-700 rounded-lg text-center">
-          <p class="text-sm font-medium text-gray-400">Monto a Pagar:</p>
+        <div id="montoBox" class="p-4 bg-gray-800 border border-gray-700 rounded-lg text-center">
+          <p id="montoLabel" class="text-sm font-medium text-gray-400">Monto a Pagar:</p>
           <p id="montoCalculadoDisplay" class="text-3xl font-bold text-orange-500">$0</p>
           <input type="hidden" id="montoCalculado" name="montoCalculado">
         </div>
@@ -81,7 +140,7 @@
         </div>
 
         <div>
-          <button type="submit" id="submitButton" class="w-full flex justify-center py-3 px-4 border border-transparent rounded-md shadow-sm text-sm font-bold text-white bg-orange-600 hover:bg-orange-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-orange-500 transition duration-150 ease-in-out">
+          <button type="submit" id="submitButton" class="w-full flex justify-center py-3 px-4 border border-transparent rounded-md shadow-sm text-sm font-bold text-white bg-orange-600 hover:bg-orange-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-orange-500 transition-all duration-150 ease-in-out">
             <span id="buttonText">Guardar Registro</span>
             <div id="loader" class="loader ease-linear rounded-full border-4 border-t-4 border-gray-200 h-5 w-5 hidden"></div>
           </button>
@@ -90,22 +149,27 @@
       
       <div id="status" class="mt-4 text-center text-sm"></div>
 
-      <p class="text-center text-gray-600 text-xs mt-6">v1.1</p>
+      <p class="text-center text-gray-600 text-xs mt-6">v1.2</p>
     </div>
 
     <!-- Modal Overlay -->
     <div id="successModal" class="fixed inset-0 z-50 hidden flex items-center justify-center bg-black/80 px-4 py-8 backdrop-blur-sm shadow-2xl">
       <div class="bg-gray-900 border border-gray-700 rounded-xl p-6 max-w-sm w-full text-center shadow-2xl relative animate-bounce-short">
-        <div class="mx-auto flex items-center justify-center h-16 w-16 rounded-full bg-green-900/50 mb-4">
-           <svg class="h-10 w-10 text-green-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path></svg>
+        <div id="modalIconWrap" class="mx-auto flex items-center justify-center h-16 w-16 rounded-full bg-green-900/50 mb-4">
+           <svg id="modalIconSvg" class="h-10 w-10 text-green-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path></svg>
         </div>
-        <h2 class="text-2xl font-bold text-white mb-2">¡Pago Registrado!</h2>
+         <h2 id="modalTitle" class="text-2xl font-bold text-white mb-2">¡Pago Registrado!</h2>
         <div class="bg-gray-800 p-4 rounded-lg my-4 text-left border border-gray-700 shadow-inner">
            <p class="text-xs text-gray-400 uppercase tracking-wider text-center">Recibo N°</p>
            <p id="modalReceiptId" class="text-3xl font-mono text-orange-500 font-bold tracking-widest text-center mt-1"></p>
            <hr class="border-gray-700 my-3">
            <p class="text-sm text-gray-300 py-1"><strong>Nombre:</strong> <span id="modalName" class="text-white"></span></p>
            <p class="text-sm text-gray-300 py-1"><strong>Monto:</strong> <span class="text-white">$</span><span id="modalAmount" class="text-white"></span></p>
+        </div>
+        <!-- Banner del líder de ventas -->
+        <div id="liderBanner" class="hidden my-3 p-3 rounded-lg bg-gradient-to-r from-yellow-900/40 to-amber-900/40 border border-yellow-700/50">
+          <p id="liderFrase" class="text-sm text-yellow-300 font-medium"></p>
+          <p id="liderStats" class="text-xs text-yellow-500/70 mt-1"></p>
         </div>
         <button id="modalWappBtn" onclick="compartirWhatsApp()" class="w-full flex justify-center items-center px-4 py-3 bg-[#25D366] hover:bg-[#128C7E] text-white rounded-md transition-colors font-bold shadow-lg mt-2 text-lg">
           📲 Compartir por WhatsApp
@@ -120,6 +184,9 @@
       // --- Configuración (Mantenemos el precio de 15.000) ---
       const PRECIO_POR_PERSONA = 15000;
 
+      // --- Estado del tipo de operación ---
+      var tipoOperacion = 'cobro';
+
       // --- Elementos del DOM ---
       const form = document.getElementById('paymentForm');
       const cantidadInput = document.getElementById('cantidad');
@@ -130,6 +197,36 @@
       const buttonText = document.getElementById('buttonText');
       const loader = document.getElementById('loader');
 
+      function setTipo(tipo) {
+        tipoOperacion = tipo;
+        document.getElementById('tipo').value = tipo;
+        const btnCobro = document.getElementById('btnCobro');
+        const btnDevolucion = document.getElementById('btnDevolucion');
+        const body = document.body;
+
+        if (tipo === 'devolucion') {
+          body.classList.add('devolucion-mode');
+          btnCobro.className = 'toggle-btn';
+          btnDevolucion.className = 'toggle-btn active-devolucion';
+          document.getElementById('mainTitle').textContent = 'Registro de Devolución';
+          document.getElementById('montoLabel').textContent = 'Monto a Devolver:';
+          montoCalculadoDisplay.className = 'text-3xl font-bold text-red-500';
+          submitButton.className = submitButton.className.replace(/bg-orange-600/g, 'bg-red-600').replace(/hover:bg-orange-700/g, 'hover:bg-red-700').replace(/ring-orange-500/g, 'ring-red-500');
+          buttonText.textContent = 'Registrar Devolución';
+        } else {
+          body.classList.remove('devolucion-mode');
+          btnCobro.className = 'toggle-btn active-cobro';
+          btnDevolucion.className = 'toggle-btn';
+          document.getElementById('mainTitle').textContent = 'Registro de Cobro';
+          document.getElementById('montoLabel').textContent = 'Monto a Pagar:';
+          montoCalculadoDisplay.className = 'text-3xl font-bold text-orange-500';
+          submitButton.className = submitButton.className.replace(/bg-red-600/g, 'bg-orange-600').replace(/hover:bg-red-700/g, 'hover:bg-orange-700').replace(/ring-red-500/g, 'ring-orange-500');
+          buttonText.textContent = 'Guardar Registro';
+        }
+        // Actualizar el display del monto con el signo correcto
+        updateMontoCalculado();
+      }
+
       function updateMontoCalculado() {
         const cantidad = parseInt(cantidadInput.value) || 0;
         const total = cantidad * PRECIO_POR_PERSONA;
@@ -139,8 +236,12 @@
           currency: 'ARS',
           minimumFractionDigits: 0
         });
-        
-        montoCalculadoDisplay.textContent = formatter.format(total);
+
+        if (tipoOperacion === 'devolucion') {
+          montoCalculadoDisplay.textContent = '-' + formatter.format(total);
+        } else {
+          montoCalculadoDisplay.textContent = formatter.format(total);
+        }
         montoCalculadoInput.value = total;
         // Se autocompleta el campo de monto a cobrar para evitar que el usuario deba tippearlo siempre
         document.getElementById('montoCobrado').value = total;
@@ -162,6 +263,7 @@
           cantidad: document.getElementById('cantidad').value,
           montoCalculado: document.getElementById('montoCalculado').value,
           montoCobrado: document.getElementById('montoCobrado').value,
+          tipo: tipoOperacion,
         };
         
         google.script.run
@@ -173,16 +275,78 @@
       // Variable global para guardar la URL de WhatsApp del último recibo
       var ultimaWappUrl = '';
 
+      // --- Frases de idolatría para el líder de ventas ---
+      var frasesLider = [
+        '🏆 {NOMBRE} está IMPARABLE. El resto, a llorar al campito.',
+        '🔥 {NOMBRE} va primero y no afloja. Máquina total.',
+        '👑 Inclínense ante {NOMBRE}, el Rey/Reina del asado.',
+        '🚀 {NOMBRE} vendiendo como si no hubiera mañana.',
+        '💪 {NOMBRE} lleva la delantera. ¿Alguien puede pararlo/a?',
+        '⚡ {NOMBRE} está en modo bestia. Inalcanzable.',
+        '🥇 Medalla de oro para {NOMBRE}. El resto pide autógrafos.',
+        '🐐 {NOMBRE} es el GOAT de los asados. Indiscutible.',
+        '🎯 {NOMBRE} no falla ni un cobro. Puntería letal.',
+        '💰 {NOMBRE} recauda como el mismísimo AFIP.',
+        '🦁 {NOMBRE} rugiendo primero en el podio. Fierazo/a.',
+        '📈 Las acciones de {NOMBRE} se dispararon. ¡Cómprenlé!',
+        '🏅 {NOMBRE} ganándole al resto con los ojos cerrados.',
+        '🌟 {NOMBRE} brilla más que el Sol. Estrella absoluta.',
+        '😤 {NOMBRE} no vino a participar, vino a ganar.',
+        '🎩 {NOMBRE}: elegancia, categoría y muchos cobros.',
+        '🧲 La plata va sola a las manos de {NOMBRE}.',
+        '🤑 {NOMBRE} juntando más guita que Elon Musk.',
+        '⭐ Si el asado fuera un Mundial, {NOMBRE} sería Messi.',
+        '🏋️ {NOMBRE} cargando al equipo en la espalda. Crack total.',
+        '🎪 Señoras y señores, el show de {NOMBRE} continúa.',
+        '🍖 {NOMBRE} vende más que parrillero en domingo.',
+      ];
+
+      function fraseRandom(nombre) {
+        var idx = Math.floor(Math.random() * frasesLider.length);
+        return frasesLider[idx].replace(/\{NOMBRE\}/g, nombre);
+      }
+
       function handleSuccess(response) {
         setLoading(false);
+        var esDevolucion = (response.tipo === 'devolucion');
         
         // Cargar datos en el modal
         document.getElementById('modalReceiptId').textContent = response.recibo;
         document.getElementById('modalName').textContent = response.nombre;
         document.getElementById('modalAmount').textContent = response.monto;
-        
-        var wappText = '*Cena de Hockey - Club Olivos*\n' +
-          '✅ Pago registrado.\n' +
+
+        // Adaptar modal según tipo
+        var modalTitle = document.getElementById('modalTitle');
+        var modalIconWrap = document.getElementById('modalIconWrap');
+        var modalIconSvg = document.getElementById('modalIconSvg');
+        var receiptLabel = document.getElementById('modalReceiptId');
+
+        if (esDevolucion) {
+          modalTitle.textContent = '¡Devolución Registrada!';
+          modalIconWrap.className = 'mx-auto flex items-center justify-center h-16 w-16 rounded-full bg-red-900/50 mb-4';
+          modalIconSvg.className = 'h-10 w-10 text-red-500';
+          receiptLabel.className = 'text-3xl font-mono text-red-500 font-bold tracking-widest text-center mt-1';
+        } else {
+          modalTitle.textContent = '¡Pago Registrado!';
+          modalIconWrap.className = 'mx-auto flex items-center justify-center h-16 w-16 rounded-full bg-green-900/50 mb-4';
+          modalIconSvg.className = 'h-10 w-10 text-green-500';
+          receiptLabel.className = 'text-3xl font-mono text-orange-500 font-bold tracking-widest text-center mt-1';
+        }
+
+        // Mostrar banner del líder
+        var liderBanner = document.getElementById('liderBanner');
+        if (response.lider && response.lider.nombre) {
+          var totalFormateado = new Intl.NumberFormat('es-AR', { style: 'currency', currency: 'ARS', minimumFractionDigits: 0 }).format(response.lider.total);
+          document.getElementById('liderFrase').textContent = fraseRandom(response.lider.nombre);
+          document.getElementById('liderStats').textContent = '👑 Líder actual: ' + response.lider.nombre + ' — ' + totalFormateado + ' cobrados';
+          liderBanner.classList.remove('hidden');
+        } else {
+          liderBanner.classList.add('hidden');
+        }
+
+        var tipoTexto = esDevolucion ? '↩️ Devolución registrada.' : '✅ Pago registrado.';
+        var wappText = '*Asado 18/6 - Club Olivos*\n' +
+          tipoTexto + '\n' +
           '👤 Nombre: ' + response.nombre + '\n' +
           '💰 Monto: $' + response.monto + '\n' +
           '🧾 *Recibo N°: ' + response.recibo + '*';
@@ -206,7 +370,9 @@
       function closeModal() {
         document.getElementById('successModal').classList.add('hidden');
         form.reset();
-        montoCalculadoDisplay.textContent = '$0'; 
+        montoCalculadoDisplay.textContent = '$0';
+        // Resetear a modo cobro
+        setTipo('cobro');
       }
 
       function handleFailure(error) {
@@ -250,6 +416,20 @@
            submitButton.classList.remove('opacity-75', 'cursor-not-allowed');
         }
       }
+
+      // --- Inicializar links de navegación ---
+      window.addEventListener('DOMContentLoaded', () => {
+        if (typeof google !== 'undefined' && google.script && google.script.run) {
+          google.script.run
+            .withSuccessHandler(url => {
+              const btnAsis = document.getElementById('btnAsistencia');
+              if (btnAsis) btnAsis.href = url + '?page=asistencia';
+              const btnPv = document.getElementById('btnPuntoVenta');
+              if (btnPv) btnPv.href = url + '?page=puntoventa';
+            })
+            .getWebAppUrl();
+        }
+      });
     </script>
   </body>
 </html>
