@@ -170,6 +170,10 @@
                 <span class="text-slate-400">🦸 FiguGigante:</span>
                 <span id="sumFiguGigante" class="text-slate-200 font-mono">0</span>
               </div>
+              <div class="flex justify-between">
+                <span class="text-slate-400">🎁 Promo 2x1:</span>
+                <span id="sumPromo2x1" class="text-slate-200 font-mono">0</span>
+              </div>
             </div>
             <div class="text-[10px] text-slate-400 mt-2 pt-2 border-t border-slate-800/80 text-right uppercase tracking-wider font-extrabold">
               Paquetes Totales: <strong id="sumTotalPacks" class="text-emerald-300 font-mono text-xs">0</strong>
@@ -323,6 +327,7 @@
         let totalPaq4 = 0;
         let totalPaq10 = 0;
         let totalFiguGigante = 0;
+        let totalPromo2x1 = 0;
 
         localSales.forEach(v => {
           totalMoney += v.total || 0;
@@ -334,6 +339,7 @@
           totalPaq4 += v.paq4 || 0;
           totalPaq10 += v.paq10 || 0;
           totalFiguGigante += v.figuGigante || 0;
+          totalPromo2x1 += v.promo2x1 || 0;
         });
 
         // Actualizar panel de resumen
@@ -348,8 +354,9 @@
           document.getElementById('sumPaq4').textContent = totalPaq4.toLocaleString('es-AR');
           document.getElementById('sumPaq10').textContent = totalPaq10.toLocaleString('es-AR');
           document.getElementById('sumFiguGigante').textContent = totalFiguGigante.toLocaleString('es-AR');
+          document.getElementById('sumPromo2x1').textContent = totalPromo2x1.toLocaleString('es-AR');
 
-          const totalPacks = totalPaq1 + (totalPaq4 * 4) + (totalPaq10 * 10);
+          const totalPacks = totalPaq1 + (totalPaq4 * 4) + (totalPaq10 * 10) + (totalPromo2x1 * 10);
           document.getElementById('sumTotalPacks').textContent = totalPacks.toLocaleString('es-AR');
         }
 
@@ -367,6 +374,7 @@
           if (v.paq4 > 0) products.push(`📦 ${v.paq4} Combo4`);
           if (v.paq10 > 0) products.push(`🔥 ${v.paq10} Super10`);
           if (v.figuGigante > 0) products.push(`🦸 ${v.figuGigante} FiguGigante`);
+          if (v.promo2x1 > 0) products.push(`🎁 ${v.promo2x1} Promo2x1`);
           const desglose = products.join(' • ');
 
           // Desglose de cobro

@@ -493,12 +493,14 @@
         const paq4 = prodsData.paq4 || { qty: 0, revenue: 0 };
         const paq10 = prodsData.paq10 || { qty: 0, revenue: 0 };
         const figuGigante = prodsData.figuGigante || { qty: 0, revenue: 0 };
+        const promo2x1 = prodsData.promo2x1 || { qty: 0, revenue: 0 };
 
         // 1. Progreso del Objetivo (37.000 paquetes)
         const pack1Qty = paq1.qty || 0;
         const paq4Qty = paq4.qty || 0;
         const paq10Qty = paq10.qty || 0;
-        const totalPacks = pack1Qty + (paq4Qty * 4) + (paq10Qty * 10);
+        const promo2x1Qty = promo2x1.qty || 0;
+        const totalPacks = pack1Qty + (paq4Qty * 4) + (paq10Qty * 10) + (promo2x1Qty * 10);
         
         const targetPacks = 37000;
         const percentage = Math.min(100, Math.round((totalPacks / targetPacks) * 100));
@@ -569,7 +571,8 @@
           { name: "✨ 1 Paquete", qty: pack1Qty, rev: paq1.revenue || 0, color: "text-emerald-400" },
           { name: "📦 Combo 4 Paq.", qty: paq4Qty, rev: paq4.revenue || 0, color: "text-sky-400" },
           { name: "🔥 Super Pack 10 Paq.", qty: paq10Qty, rev: paq10.revenue || 0, color: "text-amber-400" },
-          { name: "🦸 FiguGigante", qty: figuGigante.qty || 0, rev: figuGigante.revenue || 0, color: "text-rose-400" }
+          { name: "🦸 FiguGigante", qty: figuGigante.qty || 0, rev: figuGigante.revenue || 0, color: "text-rose-400" },
+          { name: "🎁 2x1 Super Pack 10 Paq.", qty: promo2x1Qty, rev: promo2x1.revenue || 0, color: "text-fuchsia-400" }
         ];
 
         prods.forEach(p => {
@@ -650,6 +653,7 @@
               if (sale.paq4 > 0) products.push(`📦 ${sale.paq4} Combo4`);
               if (sale.paq10 > 0) products.push(`🔥 ${sale.paq10} Pack10`);
               if (sale.figuGigante > 0) products.push(`🦸 ${sale.figuGigante} FiguGigante`);
+              if (sale.promo2x1 > 0) products.push(`🎁 ${sale.promo2x1} Promo 2x1`);
               const desglose = products.join(' • ') || 'Sin productos';
 
               const tr = document.createElement('tr');
@@ -797,8 +801,8 @@
           });
         }
 
-        // Colores premium acordes al tema (Indigo, Purple, Emerald, Sky, Amber, Rose)
-        const colorsProducts = ['#6366f1', '#a855f7', '#10b981', '#0ea5e9', '#f59e0b', '#f43f5e'];
+        // Colores premium acordes al tema (Indigo, Purple, Emerald, Sky, Amber, Rose, Fuchsia)
+        const colorsProducts = ['#6366f1', '#a855f7', '#10b981', '#0ea5e9', '#f59e0b', '#f43f5e', '#d946ef'];
         const colorsPayments = ['#34d399', '#60a5fa']; // emerald light, blue light
 
         const ctxProduct = document.getElementById('productChart').getContext('2d');
@@ -811,9 +815,10 @@
           (prodsData.paq1 && prodsData.paq1.qty) || 0,
           (prodsData.paq4 && prodsData.paq4.qty) || 0,
           (prodsData.paq10 && prodsData.paq10.qty) || 0,
-          (prodsData.figuGigante && prodsData.figuGigante.qty) || 0
+          (prodsData.figuGigante && prodsData.figuGigante.qty) || 0,
+          (prodsData.promo2x1 && prodsData.promo2x1.qty) || 0
         ];
-        const prodLabels = ['📖 Álbumes $25k', '📖 Álbumes $30k', '✨ 1 Paquete', '📦 Combo 4', '🔥 Super Pack 10', '🦸 FiguGigante'];
+        const prodLabels = ['📖 Álbumes $25k', '📖 Álbumes $30k', '✨ 1 Paquete', '📦 Combo 4', '🔥 Super Pack 10', '🦸 FiguGigante', '🎁 2x1 Super Pack 10'];
         const totalProds = prodData.reduce((a, b) => a + b, 0);
 
         if (productChartInstance) {
@@ -951,7 +956,8 @@
             paq1: { qty: 25, revenue: 75000 },
             paq4: { qty: 15, revenue: 150000 },
             paq10: { qty: 32, revenue: 640000 },
-            figuGigante: { qty: 6, revenue: 60000 }
+            figuGigante: { qty: 6, revenue: 60000 },
+            promo2x1: { qty: 3, revenue: 60000 }
           },
           vendedores: {
             Joaco: { efectivo: 80000, cbu: 120000, total: 200000, albums: 1, albums30k: 0, paquetes: 50 },
