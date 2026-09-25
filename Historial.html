@@ -151,8 +151,8 @@
             <span class="text-[10px] text-emerald-300 font-extrabold uppercase tracking-wider block mb-2">Resumen de Productos</span>
             <div class="grid grid-cols-2 gap-2 text-xs font-semibold">
               <div class="flex justify-between col-span-2">
-                <span class="text-slate-400">📖 Álbumes ($25k / $30k):</span>
-                <span class="text-slate-200 font-mono"><span id="sumAlbums">0</span> / <span id="sumAlbums30k">0</span></span>
+                <span class="text-slate-400">📖 Álbumes ($25k / $30k / PRE):</span>
+                <span class="text-slate-200 font-mono"><span id="sumAlbums">0</span> / <span id="sumAlbums30k">0</span> / <span id="sumAlbumPRE">0</span></span>
               </div>
               <div class="flex justify-between">
                 <span class="text-slate-400">✨ 1 Paq:</span>
@@ -328,6 +328,7 @@
         let totalPaq10 = 0;
         let totalFiguGigante = 0;
         let totalPromo2x1 = 0;
+        let totalAlbumPRE = 0;
 
         localSales.forEach(v => {
           totalMoney += v.total || 0;
@@ -340,6 +341,7 @@
           totalPaq10 += v.paq10 || 0;
           totalFiguGigante += v.figuGigante || 0;
           totalPromo2x1 += v.promo2x1 || 0;
+          totalAlbumPRE += v.albumPRE || 0;
         });
 
         // Actualizar panel de resumen
@@ -350,6 +352,7 @@
           document.getElementById('sumCbu').textContent = currencyFormatter.format(totalCbu);
           document.getElementById('sumAlbums').textContent = totalAlbums.toLocaleString('es-AR');
           document.getElementById('sumAlbums30k').textContent = totalAlbums30k.toLocaleString('es-AR');
+          document.getElementById('sumAlbumPRE').textContent = totalAlbumPRE.toLocaleString('es-AR');
           document.getElementById('sumPaq1').textContent = totalPaq1.toLocaleString('es-AR');
           document.getElementById('sumPaq4').textContent = totalPaq4.toLocaleString('es-AR');
           document.getElementById('sumPaq10').textContent = totalPaq10.toLocaleString('es-AR');
@@ -370,6 +373,7 @@
           const products = [];
           if (v.albums > 0) products.push(`📖 ${v.albums} Alb($25k)`);
           if (v.albums30k > 0) products.push(`📖 ${v.albums30k} Alb($30k)`);
+          if (v.albumPRE > 0) products.push(`📖 ${v.albumPRE} AlbumPRE`);
           if (v.paq1 > 0) products.push(`✨ ${v.paq1} Paq`);
           if (v.paq4 > 0) products.push(`📦 ${v.paq4} Combo4`);
           if (v.paq10 > 0) products.push(`🔥 ${v.paq10} Super10`);

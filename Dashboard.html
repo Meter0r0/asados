@@ -494,6 +494,7 @@
         const paq10 = prodsData.paq10 || { qty: 0, revenue: 0 };
         const figuGigante = prodsData.figuGigante || { qty: 0, revenue: 0 };
         const promo2x1 = prodsData.promo2x1 || { qty: 0, revenue: 0 };
+        const albumPRE = prodsData.albumPRE || { qty: 0, revenue: 0 };
 
         // 1. Progreso del Objetivo (37.000 paquetes)
         const pack1Qty = paq1.qty || 0;
@@ -537,9 +538,9 @@
           if (sinClasifContainer) sinClasifContainer.classList.add('hidden');
         }
 
-        // 3. Álbumes Totales (suma de $25k y $30k)
-        const albumsQty = (albums.qty || 0) + (albums30k.qty || 0);
-        const albumsRev = (albums.revenue || 0) + (albums30k.revenue || 0);
+        // 3. Álbumes Totales (suma de $25k, $30k y PRE)
+        const albumsQty = (albums.qty || 0) + (albums30k.qty || 0) + (albumPRE.qty || 0);
+        const albumsRev = (albums.revenue || 0) + (albums30k.revenue || 0) + (albumPRE.revenue || 0);
         document.getElementById('albumsTotal').textContent = albumsQty.toLocaleString('es-AR');
         document.getElementById('albumsRevenue').textContent = currencyFormatter.format(albumsRev);
 
@@ -568,6 +569,7 @@
         const prods = [
           { name: "📖 Libro / Álbum ($25k)", qty: albums.qty || 0, rev: albums.revenue || 0, color: "text-indigo-400" },
           { name: "📖 Libro / Álbum $30k", qty: albums30k.qty || 0, rev: albums30k.revenue || 0, color: "text-purple-400" },
+          { name: "📖 AlbumPRE", qty: albumPRE.qty || 0, rev: albumPRE.revenue || 0, color: "text-teal-400" },
           { name: "✨ 1 Paquete", qty: pack1Qty, rev: paq1.revenue || 0, color: "text-emerald-400" },
           { name: "📦 Combo 4 Paq.", qty: paq4Qty, rev: paq4.revenue || 0, color: "text-sky-400" },
           { name: "🔥 Super Pack 10 Paq.", qty: paq10Qty, rev: paq10.revenue || 0, color: "text-amber-400" },
@@ -609,7 +611,7 @@
           tr.className = "hover:bg-slate-900/30 transition";
           tr.innerHTML = `
             <td class="px-4 py-3.5 font-bold text-slate-100">${seller.name}</td>
-            <td class="px-4 py-3.5 text-center font-bold text-indigo-400 font-mono">${(seller.albums || 0) + (seller.albums30k || 0)}</td>
+            <td class="px-4 py-3.5 text-center font-bold text-indigo-400 font-mono">${(seller.albums || 0) + (seller.albums30k || 0) + (seller.albumPRE || 0)}</td>
             <td class="px-4 py-3.5 text-center font-bold text-emerald-400 font-mono">${seller.paquetes || 0}</td>
             <td class="px-4 py-3.5 text-right text-[10px] text-slate-400 font-mono">
               <span class="text-emerald-400">💵 Ef:</span> $${sEf.toLocaleString('es-AR')} 
@@ -649,6 +651,7 @@
               const products = [];
               if (sale.albums > 0) products.push(`📖 ${sale.albums} Alb($25k)`);
               if (sale.albums30k > 0) products.push(`📖 ${sale.albums30k} Alb($30k)`);
+              if (sale.albumPRE > 0) products.push(`📖 ${sale.albumPRE} AlbumPRE`);
               if (sale.paq1 > 0) products.push(`✨ ${sale.paq1} Paq`);
               if (sale.paq4 > 0) products.push(`📦 ${sale.paq4} Combo4`);
               if (sale.paq10 > 0) products.push(`🔥 ${sale.paq10} Pack10`);
@@ -801,8 +804,8 @@
           });
         }
 
-        // Colores premium acordes al tema (Indigo, Purple, Emerald, Sky, Amber, Rose, Fuchsia)
-        const colorsProducts = ['#6366f1', '#a855f7', '#10b981', '#0ea5e9', '#f59e0b', '#f43f5e', '#d946ef'];
+        // Colores premium acordes al tema (Indigo, Purple, Teal, Emerald, Sky, Amber, Rose, Fuchsia)
+        const colorsProducts = ['#6366f1', '#a855f7', '#14b8a6', '#10b981', '#0ea5e9', '#f59e0b', '#f43f5e', '#d946ef'];
         const colorsPayments = ['#34d399', '#60a5fa']; // emerald light, blue light
 
         const ctxProduct = document.getElementById('productChart').getContext('2d');
@@ -812,13 +815,14 @@
         const prodData = [
           (prodsData.albums && prodsData.albums.qty) || 0,
           (prodsData.albums30k && prodsData.albums30k.qty) || 0,
+          (prodsData.albumPRE && prodsData.albumPRE.qty) || 0,
           (prodsData.paq1 && prodsData.paq1.qty) || 0,
           (prodsData.paq4 && prodsData.paq4.qty) || 0,
           (prodsData.paq10 && prodsData.paq10.qty) || 0,
           (prodsData.figuGigante && prodsData.figuGigante.qty) || 0,
           (prodsData.promo2x1 && prodsData.promo2x1.qty) || 0
         ];
-        const prodLabels = ['📖 Álbumes $25k', '📖 Álbumes $30k', '✨ 1 Paquete', '📦 Combo 4', '🔥 Super Pack 10', '🦸 FiguGigante', '🎁 2x1 Super Pack 10'];
+        const prodLabels = ['📖 Álbumes $25k', '📖 Álbumes $30k', '📖 AlbumPRE', '✨ 1 Paquete', '📦 Combo 4', '🔥 Super Pack 10', '🦸 FiguGigante', '🎁 2x1 Super Pack 10'];
         const totalProds = prodData.reduce((a, b) => a + b, 0);
 
         if (productChartInstance) {
@@ -957,16 +961,17 @@
             paq4: { qty: 15, revenue: 150000 },
             paq10: { qty: 32, revenue: 640000 },
             figuGigante: { qty: 6, revenue: 60000 },
-            promo2x1: { qty: 3, revenue: 60000 }
+            promo2x1: { qty: 3, revenue: 60000 },
+            albumPRE: { qty: 5, revenue: 100000 }
           },
           vendedores: {
-            Joaco: { efectivo: 80000, cbu: 120000, total: 200000, albums: 1, albums30k: 0, paquetes: 50 },
-            Fusche: { efectivo: 150000, cbu: 300000, total: 450000, albums: 3, albums30k: 1, paquetes: 120 },
-            MartinC: { efectivo: 25000, cbu: 50000, total: 75000, albums: 1, albums30k: 0, paquetes: 20 },
-            MartinD: { efectivo: 120000, cbu: 180000, total: 300000, albums: 2, albums30k: 1, paquetes: 80 },
-            Fortu: { efectivo: 10000, cbu: 10000, total: 20000, albums: 0, albums30k: 0, paquetes: 5 },
-            Garu: { efectivo: 0, cbu: 0, total: 0, albums: 0, albums30k: 0, paquetes: 0 },
-            Facu: { efectivo: 10000, cbu: 10000, total: 20000, albums: 1, albums30k: 2, paquetes: 5 }
+            Joaco: { efectivo: 80000, cbu: 120000, total: 200000, albums: 1, albums30k: 0, albumPRE: 1, paquetes: 50 },
+            Fusche: { efectivo: 150000, cbu: 300000, total: 450000, albums: 3, albums30k: 1, albumPRE: 0, paquetes: 120 },
+            MartinC: { efectivo: 25000, cbu: 50000, total: 75000, albums: 1, albums30k: 0, albumPRE: 0, paquetes: 20 },
+            MartinD: { efectivo: 120000, cbu: 180000, total: 300000, albums: 2, albums30k: 1, albumPRE: 2, paquetes: 80 },
+            Fortu: { efectivo: 10000, cbu: 10000, total: 20000, albums: 0, albums30k: 0, albumPRE: 0, paquetes: 5 },
+            Garu: { efectivo: 0, cbu: 0, total: 0, albums: 0, albums30k: 0, albumPRE: 0, paquetes: 0 },
+            Facu: { efectivo: 10000, cbu: 10000, total: 20000, albums: 1, albums30k: 2, albumPRE: 2, paquetes: 5 }
           },
           caja: {
             efectivo: 395000,

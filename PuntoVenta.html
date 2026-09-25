@@ -195,6 +195,25 @@
                 </div>
               </div>
 
+              <!-- Producto 1c: AlbumPRE -->
+              <div class="bg-slate-900/70 border border-slate-700 rounded-2xl p-4 flex flex-col justify-between space-y-3 hover:border-slate-600 transition">
+                <div class="flex justify-between items-start">
+                  <div>
+                    <h3 class="font-bold text-white text-sm">📖 AlbumPRE</h3>
+                    <p class="text-[10px] text-indigo-300 font-semibold mt-0.5">Precio Unitario</p>
+                  </div>
+                  <span class="text-sm font-extrabold text-emerald-300">$20.000</span>
+                </div>
+                <div class="flex items-center justify-between pt-2 border-t border-slate-700/50">
+                  <span class="text-xs text-slate-200">Cantidad</span>
+                  <div class="flex items-center space-x-2">
+                    <button type="button" onclick="adjustCount('albumPRE', -1)" class="w-8 h-8 rounded-lg bg-slate-800 border border-slate-600 text-white font-bold hover:bg-slate-700 transition flex items-center justify-center select-none text-base">-</button>
+                    <input type="number" id="albumPRE" name="albumPRE" min="0" value="0" oninput="recalculateTotal()" class="w-14 h-8 text-center bg-slate-800 border border-slate-600 text-white font-bold rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 text-sm [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none">
+                    <button type="button" onclick="adjustCount('albumPRE', 1)" class="w-8 h-8 rounded-lg bg-slate-800 border border-slate-600 text-white font-bold hover:bg-slate-700 transition flex items-center justify-center select-none text-base">+</button>
+                  </div>
+                </div>
+              </div>
+
               <!-- Producto 2: 1 Paquete -->
               <div class="bg-slate-900/70 border border-slate-700 rounded-2xl p-4 flex flex-col justify-between space-y-3 hover:border-slate-600 transition">
                 <div class="flex justify-between items-start">
@@ -401,7 +420,8 @@
         paq4: 10000,
         paq10: 20000,
         figuGigante: 10000,
-        promo2x1: 20000
+        promo2x1: 20000,
+        albumPRE: 20000
       };
 
       // Estado local
@@ -479,6 +499,7 @@
         const paq10 = parseInt(document.getElementById('paq10').value) || 0;
         const figuGigante = parseInt(document.getElementById('figuGigante').value) || 0;
         const promo2x1 = parseInt(document.getElementById('promo2x1').value) || 0;
+        const albumPRE = parseInt(document.getElementById('albumPRE').value) || 0;
 
         return (albums * PRECIOS.albums) +
                (albums30k * PRECIOS.albums30k) +
@@ -486,7 +507,8 @@
                (paq4 * PRECIOS.paq4) +
                (paq10 * PRECIOS.paq10) +
                (figuGigante * PRECIOS.figuGigante) +
-               (promo2x1 * PRECIOS.promo2x1);
+               (promo2x1 * PRECIOS.promo2x1) +
+               (albumPRE * PRECIOS.albumPRE);
       }
 
       // Recalcula el total acumulado compuesto exclusivamente por la suma de Efectivo + CBU
@@ -545,7 +567,7 @@
         document.getElementById('recordId').value = '';
         document.getElementById('comprador').value = '';
         
-        const products = ['albums', 'albums30k', 'paq1', 'paq4', 'paq10', 'figuGigante', 'promo2x1'];
+        const products = ['albums', 'albums30k', 'paq1', 'paq4', 'paq10', 'figuGigante', 'promo2x1', 'albumPRE'];
         products.forEach(p => {
           document.getElementById(p).value = 0;
         });
@@ -578,6 +600,7 @@
                 document.getElementById('paq10').value = sale.paq10 || 0;
                 document.getElementById('figuGigante').value = sale.figuGigante || 0;
                 document.getElementById('promo2x1').value = sale.promo2x1 || 0;
+                document.getElementById('albumPRE').value = sale.albumPRE || 0;
 
                 document.getElementById('efectivo').value = sale.efectivo || '';
                 document.getElementById('contado').value = sale.contado || '';
@@ -656,6 +679,7 @@
         const paq10 = parseInt(document.getElementById('paq10').value) || 0;
         const figuGigante = parseInt(document.getElementById('figuGigante').value) || 0;
         const promo2x1 = parseInt(document.getElementById('promo2x1').value) || 0;
+        const albumPRE = parseInt(document.getElementById('albumPRE').value) || 0;
         const efectivo = parseInt(document.getElementById('efectivo').value) || 0;
         const cbu = parseInt(document.getElementById('cbu').value) || 0;
         const contado = parseInt(document.getElementById('contado').value) || 0;
@@ -695,7 +719,7 @@
               setFormLoading(false);
               showToast("❌ Error al registrar venta: " + err.message, "error");
             })
-            .guardarVentaPuntoVenta(recordId, seller, comprador, albums, albums30k, paq1, paq4, paq10, figuGigante, total, efectivo, cbu, contado, promo2x1);
+            .guardarVentaPuntoVenta(recordId, seller, comprador, albums, albums30k, paq1, paq4, paq10, figuGigante, total, efectivo, cbu, contado, promo2x1, albumPRE);
         } else {
           // Offline Mock
           setTimeout(() => {

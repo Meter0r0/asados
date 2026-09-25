@@ -510,19 +510,36 @@ function verificarYMigrarColumnas(sheet) {
       sheet.getRange(2, newCol, fillValues.length, 1).setValues(fillValues);
     }
   }
+
+  // Verificar/agregar columna "AlbumPRE" al final de la planilla
+  const headersActuales3 = sheet.getRange(1, 1, 1, sheet.getLastColumn()).getValues()[0];
+  if (headersActuales3.indexOf("AlbumPRE") === -1) {
+    const newCol = sheet.getLastColumn() + 1;
+    sheet.getRange(1, newCol).setValue("AlbumPRE")
+         .setBackground("#434343").setFontColor("#ffffff").setFontWeight("bold");
+
+    const lastRow = sheet.getLastRow();
+    if (lastRow > 1) {
+      const fillValues = [];
+      for (let r = 2; r <= lastRow; r++) {
+        fillValues.push([0]);
+      }
+      sheet.getRange(2, newCol, fillValues.length, 1).setValues(fillValues);
+    }
+  }
 }
 
 /**
  * Guarda o edita un registro de venta en la planilla del punto de venta.
  */
-function guardarVentaPuntoVenta(recordId, vendedor, comprador, albums, albums30k, paq1, paq4, paq10, figuGigante, total, efectivo, cbu, contado, promo2x1) {
+function guardarVentaPuntoVenta(recordId, vendedor, comprador, albums, albums30k, paq1, paq4, paq10, figuGigante, total, efectivo, cbu, contado, promo2x1, albumPRE) {
   try {
     const ss = SpreadsheetApp.openById(SPREADSHEET_PV_ID);
     let sheet = ss.getSheetByName(SHEET_PV_NAME);
     if (!sheet) {
       sheet = ss.insertSheet(SHEET_PV_NAME);
-      sheet.appendRow(["Timestamp", "ID", "Vendedor", "Comprador", "Albums", "Albums30k", "Paquetes1", "Paquetes4", "Paquetes10", "MontoTotal", "CobradoEfectivo", "CobradoTransferencia", "MontoContadoEfectivo", "DiferenciaEfectivo", "FiguGigante", "Promo2x1Paq10"]);
-      sheet.getRange(1, 1, 1, 16).setBackground("#434343").setFontColor("#ffffff").setFontWeight("bold");
+      sheet.appendRow(["Timestamp", "ID", "Vendedor", "Comprador", "Albums", "Albums30k", "Paquetes1", "Paquetes4", "Paquetes10", "MontoTotal", "CobradoEfectivo", "CobradoTransferencia", "MontoContadoEfectivo", "DiferenciaEfectivo", "FiguGigante", "Promo2x1Paq10", "AlbumPRE"]);
+      sheet.getRange(1, 1, 1, 17).setBackground("#434343").setFontColor("#ffffff").setFontWeight("bold");
     }
 
     // Asegurar la presencia de la columna Albums30k
@@ -547,8 +564,8 @@ function guardarVentaPuntoVenta(recordId, vendedor, comprador, albums, albums30k
     const diff = numContado - numEfectivo;
 
     if (rowIndex !== -1) {
-      // Editar registro existente (columnas: Timestamp=1..DiferenciaEfectivo=14, FiguGigante=15, Promo2x1Paq10=16)
-      sheet.getRange(rowIndex, 1, 1, 16).setValues([[
+      // Editar registro existente (columnas: Timestamp=1..DiferenciaEfectivo=14, FiguGigante=15, Promo2x1Paq10=16, AlbumPRE=17)
+      sheet.getRange(rowIndex, 1, 1, 17).setValues([[
         timestamp,
         recordId,
         vendedor,
@@ -564,7 +581,8 @@ function guardarVentaPuntoVenta(recordId, vendedor, comprador, albums, albums30k
         numContado,
         diff,
         Number(figuGigante) || 0,
-        Number(promo2x1) || 0
+        Number(promo2x1) || 0,
+        Number(albumPRE) || 0
       ]]);
     } else {
       // Generar nuevo ID único
@@ -585,7 +603,8 @@ function guardarVentaPuntoVenta(recordId, vendedor, comprador, albums, albums30k
         numContado,
         diff,
         Number(figuGigante) || 0,
-        Number(promo2x1) || 0
+        Number(promo2x1) || 0,
+        Number(albumPRE) || 0
       ]);
     }
 
@@ -636,7 +655,8 @@ function getVentasPuntoVenta(vendedor) {
           contado: Number(row[12]) || 0,
           diferencia: Number(row[13]) || 0,
           figuGigante: Number(row[14]) || 0,
-          promo2x1: Number(row[15]) || 0
+          promo2x1: Number(row[15]) || 0,
+          albumPRE: Number(row[16]) || 0
         });
       }
     }
@@ -735,7 +755,8 @@ function getDashboardData() {
         paq4: { qty: 0, revenue: 0 },
         paq10: { qty: 0, revenue: 0 },
         figuGigante: { qty: 0, revenue: 0 },
-        promo2x1: { qty: 0, revenue: 0 }
+        promo2x1: { qty: 0, revenue: 0 },
+        albumPRE: { qty: 0, revenue: 0 }
       },
       vendedores: {},
       caja: {
@@ -753,7 +774,7 @@ function getDashboardData() {
     // Inicializar vendedores oficiales
     const vendedoresOficiales = ["Joaco", "Fusche", "MartinC", "MartinD", "Fortu", "Garu", "Facu", "Bar"];
     vendedoresOficiales.forEach(v => {
-      stats.vendedores[v] = { efectivo: 0, cbu: 0, total: 0, sinClasificar: 0, albums: 0, albums30k: 0, paquetes: 0 };
+      stats.vendedores[v] = { efectivo: 0, cbu: 0, total: 0, sinClasificar: 0, albums: 0, albums30k: 0, albumPRE: 0, paquetes: 0 };
     });
 
     if (!sheet) {
@@ -800,7 +821,8 @@ function getDashboardData() {
       contado: findIndexByAliases(["montocontadoefectivo", "contado", "montocontado"], 12),
       diferencia: findIndexByAliases(["diferenciaefectivo", "diferencia"], 13),
       figuGigante: findIndexByAliases(["figugigante", "figugigantes"], 14),
-      promo2x1: findIndexByAliases(["promo2x1paq10", "promo2x1", "2x1superpack10", "2x1paq10"], 15)
+      promo2x1: findIndexByAliases(["promo2x1paq10", "promo2x1", "2x1superpack10", "2x1paq10"], 15),
+      albumPRE: findIndexByAliases(["albumpre", "albumspre", "albumpreventa"], 16)
     };
 
     const getValue = (row, idx) => (idx >= 0 && idx < row.length ? Number(row[idx]) || 0 : 0);
@@ -818,7 +840,7 @@ function getDashboardData() {
       if (!vendedor) {
         vendedor = vendedorRaw;
         if (!stats.vendedores[vendedor]) {
-          stats.vendedores[vendedor] = { efectivo: 0, cbu: 0, total: 0, sinClasificar: 0, albums: 0, albums30k: 0, paquetes: 0 };
+          stats.vendedores[vendedor] = { efectivo: 0, cbu: 0, total: 0, sinClasificar: 0, albums: 0, albums30k: 0, albumPRE: 0, paquetes: 0 };
         }
       }
 
@@ -829,11 +851,12 @@ function getDashboardData() {
       const paq10 = getValue(row, colIndex.paq10);
       const figuGigante = getValue(row, colIndex.figuGigante);
       const promo2x1 = getValue(row, colIndex.promo2x1);
+      const albumPRE = getValue(row, colIndex.albumPRE);
       const rawTotal = getValue(row, colIndex.total);
       const efectivo = getValue(row, colIndex.efectivo);
       const cbu = getValue(row, colIndex.cbu);
 
-      const prodTotal = (albums * 25000 + albums30k * 30000 + paq1 * 3000 + paq4 * 10000 + paq10 * 20000 + figuGigante * 10000 + promo2x1 * 20000);
+      const prodTotal = (albums * 25000 + albums30k * 30000 + paq1 * 3000 + paq4 * 10000 + paq10 * 20000 + figuGigante * 10000 + promo2x1 * 20000 + albumPRE * 20000);
       const cobradoMetodos = efectivo + cbu;
       const totalVenta = rawTotal > 0 ? rawTotal : (cobradoMetodos > 0 ? cobradoMetodos : prodTotal);
       const sinClasificarFila = cobradoMetodos > 0 ? Math.max(0, totalVenta - cobradoMetodos) : totalVenta;
@@ -861,6 +884,9 @@ function getDashboardData() {
       stats.productos.promo2x1.qty += promo2x1;
       stats.productos.promo2x1.revenue += promo2x1 * 20000;
 
+      stats.productos.albumPRE.qty += albumPRE;
+      stats.productos.albumPRE.revenue += albumPRE * 20000;
+
       // Acumular por vendedor
       stats.vendedores[vendedor].efectivo += efectivo;
       stats.vendedores[vendedor].cbu += cbu;
@@ -868,6 +894,7 @@ function getDashboardData() {
       stats.vendedores[vendedor].sinClasificar += sinClasificarFila;
       stats.vendedores[vendedor].albums += albums;
       stats.vendedores[vendedor].albums30k += albums30k;
+      stats.vendedores[vendedor].albumPRE += albumPRE;
       stats.vendedores[vendedor].paquetes += paquetesFila;
 
       // Acumular total global
@@ -991,6 +1018,7 @@ function getDashboardData() {
         paq10: getValue(row, colIndex.paq10),
         figuGigante: getValue(row, colIndex.figuGigante),
         promo2x1: getValue(row, colIndex.promo2x1),
+        albumPRE: getValue(row, colIndex.albumPRE),
         total: getValue(row, colIndex.total),
         efectivo: getValue(row, colIndex.efectivo),
         cbu: getValue(row, colIndex.cbu),
@@ -1073,7 +1101,8 @@ function getVentaPorId(recordId) {
           contado: Number(row[12]) || 0,
           diferencia: Number(row[13]) || 0,
           figuGigante: Number(row[14]) || 0,
-          promo2x1: Number(row[15]) || 0
+          promo2x1: Number(row[15]) || 0,
+          albumPRE: Number(row[16]) || 0
         };
       }
     }
