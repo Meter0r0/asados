@@ -860,7 +860,7 @@ function getDashboardData() {
       const cobradoMetodos = efectivo + cbu;
       const totalVenta = rawTotal > 0 ? rawTotal : (cobradoMetodos > 0 ? cobradoMetodos : prodTotal);
       const sinClasificarFila = cobradoMetodos > 0 ? Math.max(0, totalVenta - cobradoMetodos) : totalVenta;
-      const paquetesFila = paq1 + (paq4 * 4) + (paq10 * 10) + (promo2x1 * 20);
+      const paquetesFila = paq1 + (paq4 * 4) + (paq10 * 10) + (promo2x1 * 20) + (albumPRE * 2);
 
       // Acumular cantidades e ingresos
       stats.productos.albums.qty += albums;
@@ -949,7 +949,7 @@ function getDashboardData() {
       });
 
     // Calcular proyecciones
-    const totalPacksVendidos = stats.productos.paq1.qty + (stats.productos.paq4.qty * 4) + (stats.productos.paq10.qty * 10) + (stats.productos.promo2x1.qty * 20);
+    const totalPacksVendidos = stats.productos.paq1.qty + (stats.productos.paq4.qty * 4) + (stats.productos.paq10.qty * 10) + (stats.productos.promo2x1.qty * 20) + (stats.productos.albumPRE.qty * 2);
     const targetPacks = 37000;
     const remainingPacks = Math.max(0, targetPacks - totalPacksVendidos);
 

@@ -501,7 +501,7 @@
         const paq4Qty = paq4.qty || 0;
         const paq10Qty = paq10.qty || 0;
         const promo2x1Qty = promo2x1.qty || 0;
-        const totalPacks = pack1Qty + (paq4Qty * 4) + (paq10Qty * 10) + (promo2x1Qty * 20);
+        const totalPacks = pack1Qty + (paq4Qty * 4) + (paq10Qty * 10) + (promo2x1Qty * 20) + ((albumPRE.qty || 0) * 2);
         
         const targetPacks = 37000;
         const percentage = Math.min(100, Math.round((totalPacks / targetPacks) * 100));
