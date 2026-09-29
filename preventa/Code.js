@@ -265,7 +265,7 @@ function guardarRegistroFiguGigante(nombre, categoria, telefono, figuritas, obse
  * Registra un pedido de figuritas sueltas (puntuales) para completar el álbum,
  * en su propia pestaña de la planilla.
  */
-function guardarRegistroFiguritasSueltas(nombre, direccion, telefono, numeros, observaciones, fileObj) {
+function guardarRegistroFiguritasSueltas(nombre, telefono, numeros, observaciones, fileObj) {
   try {
     if (!Array.isArray(numeros) || numeros.length === 0) {
       throw new Error("Debes agregar al menos una figurita al pedido.");
@@ -278,7 +278,7 @@ function guardarRegistroFiguritasSueltas(nombre, direccion, telefono, numeros, o
 
     const ss = SpreadsheetApp.openById(SPREADSHEET_PV_ID);
     let sheet = ss.getSheetByName("FiguritasSueltas");
-    const headers = ["Timestamp", "ID Pedido", "Nombre", "Dirección", "Teléfono", "Número Figurita", "Observaciones", "Comprobante", "Estado"];
+    const headers = ["Timestamp", "ID Pedido", "Nombre", "Teléfono", "Número Figurita", "Observaciones", "Comprobante", "Estado"];
 
     if (!sheet) {
       sheet = ss.insertSheet("FiguritasSueltas");
@@ -325,7 +325,6 @@ function guardarRegistroFiguritasSueltas(nombre, direccion, telefono, numeros, o
         timestamp,
         newId,
         nombre,
-        direccion,
         telefono,
         String(numero).trim(),
         observaciones,
@@ -368,7 +367,6 @@ function doPost(e) {
     } else if (data.tipo === "figuritassueltas") {
       result = guardarRegistroFiguritasSueltas(
         data.nombre,
-        data.direccion,
         data.telefono,
         data.numeros,
         data.observaciones,

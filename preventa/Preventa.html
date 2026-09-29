@@ -194,12 +194,6 @@
             <input type="text" id="telefono" required placeholder="Ej: 11 1234-5678" class="block w-full px-3 py-2.5 bg-slate-800 border border-slate-700 text-slate-100 rounded-xl focus:outline-none focus:ring-2 focus:ring-orange-500 text-xs font-semibold">
           </div>
 
-          <!-- Direccion (solo modo Figuritas Sueltas) -->
-          <div id="direccionSection">
-            <label for="direccion" class="block text-[10px] font-extrabold text-slate-355 uppercase tracking-wider mb-1.5">Dirección de Entrega *</label>
-            <input type="text" id="direccion" required placeholder="Ej: Calle 123, Olivos" class="block w-full px-3 py-2.5 bg-slate-800 border border-slate-700 text-slate-100 rounded-xl focus:outline-none focus:ring-2 focus:ring-sky-500 text-xs font-semibold">
-          </div>
-
           <!-- Cantidad a Reservar (solo modo Álbum) -->
           <div id="albumSection" class="hidden flex items-center justify-between py-2 border-t border-b border-slate-800">
             <div>
@@ -349,12 +343,10 @@
         const figuSection = document.getElementById('figuSection');
         const sueltasSection = document.getElementById('sueltasSection');
         const categoriaSection = document.getElementById('categoriaSection');
-        const direccionSection = document.getElementById('direccionSection');
 
         const nombreInput = document.getElementById('nombre');
         const categoriaInput = document.getElementById('categoria');
         const telefonoInput = document.getElementById('telefono');
-        const direccionInput = document.getElementById('direccion');
         const comprobanteInput = document.getElementById('comprobante');
 
         btnAlbum.className = 'toggle-btn';
@@ -364,7 +356,6 @@
         figuSection.classList.add('hidden');
         sueltasSection.classList.add('hidden');
         categoriaSection.classList.remove('hidden');
-        direccionSection.classList.add('hidden');
 
         if (tipo === 'figugigante') {
           btnFigu.className = 'toggle-btn active-figu';
@@ -392,7 +383,6 @@
           btnSueltas.className = 'toggle-btn active-sueltas';
           sueltasSection.classList.remove('hidden');
           categoriaSection.classList.add('hidden');
-          direccionSection.classList.remove('hidden');
 
           document.getElementById('headerIcon').textContent = '🧩';
           document.getElementById('mainTitle').textContent = 'Pedido de Figuritas';
@@ -406,7 +396,6 @@
           nombreInput.required = true;
           categoriaInput.required = false;
           telefonoInput.required = true;
-          direccionInput.required = true;
           comprobanteInput.required = true;
 
           if (document.getElementById('sueltasContainer').children.length === 0) {
@@ -429,7 +418,6 @@
           nombreInput.required = true;
           categoriaInput.required = true;
           telefonoInput.required = true;
-          direccionInput.required = false;
           comprobanteInput.required = true;
         }
 
@@ -661,13 +649,6 @@
         }
 
         if (tipoPedido === 'figuritassueltas') {
-          const direccion = document.getElementById('direccion').value.trim();
-
-          if (!direccion) {
-            showToast("❌ Debes ingresar una dirección de entrega", "error");
-            return;
-          }
-
           const numeros = [];
           let huboErrorSueltas = false;
 
@@ -703,7 +684,7 @@
                 setFormLoading(false);
                 showToast("❌ Error al registrar el pedido: " + err.message, "error");
               })
-              .guardarRegistroFiguritasSueltas(nombre, direccion, telefono, numeros, observaciones, fileObj);
+              .guardarRegistroFiguritasSueltas(nombre, telefono, numeros, observaciones, fileObj);
           } else {
             const webAppUrl = "https://script.google.com/macros/s/AKfycbz-fgBkbynC_yw8R8t2bs7xNfpHJI4JwsE0pjtQD2Zthd9uqtNB22HKFyuurwZxqakF/exec";
 
@@ -715,7 +696,6 @@
               body: JSON.stringify({
                 tipo: "figuritassueltas",
                 nombre: nombre,
-                direccion: direccion,
                 telefono: telefono,
                 numeros: numeros,
                 observaciones: observaciones,
@@ -839,7 +819,6 @@
         document.getElementById('nombre').value = '';
         document.getElementById('categoria').value = '';
         document.getElementById('telefono').value = '';
-        document.getElementById('direccion').value = '';
         document.getElementById('cantidad').value = 1;
         document.getElementById('observaciones').value = '';
         document.getElementById('comprobante').value = '';
