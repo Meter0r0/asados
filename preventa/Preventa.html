@@ -82,6 +82,11 @@
         color: white;
         box-shadow: 0 2px 8px rgba(147, 51, 234, 0.4);
       }
+      .toggle-btn.active-sueltas {
+        background: #0ea5e9;
+        color: white;
+        box-shadow: 0 2px 8px rgba(14, 165, 233, 0.4);
+      }
 
       .figurita-row input.invalid {
         border-color: #f43f5e !important;
@@ -117,10 +122,11 @@
         <p class="text-xs text-orange-400 font-bold uppercase tracking-wider">Club Olivos Hockey</p>
       </div>
 
-      <!-- Toggle Álbum / FiguGigante -->
+      <!-- Toggle Álbum / FiguGigante / Figuritas Sueltas -->
       <div class="toggle-container">
         <button type="button" id="btnModoAlbum" class="toggle-btn active-album" onclick="setTipo('album')">📖 Álbum</button>
         <button type="button" id="btnModoFigu" class="toggle-btn" onclick="setTipo('figugigante')">🦸 FiguGigante</button>
+        <button type="button" id="btnModoSueltas" class="toggle-btn" onclick="setTipo('figuritassueltas')">🧩 Figus Sueltas</button>
       </div>
       <input type="hidden" id="tipoPedido" value="album">
 
@@ -142,7 +148,7 @@
           </div>
 
           <!-- Categoria/Grupo -->
-          <div>
+          <div id="categoriaSection">
             <label for="categoria" id="categoriaLabel" class="block text-[10px] font-extrabold text-slate-350 uppercase tracking-wider mb-1.5">Categoría / División *</label>
             <select id="categoria" required class="block w-full px-3 py-2.5 bg-slate-800 border border-slate-700 text-slate-100 rounded-xl focus:outline-none focus:ring-2 focus:ring-orange-500 text-xs font-semibold appearance-none bg-[url('data:image/svg+xml;charset=utf-8,%3Csvg xmlns=\'http://www.w3.org/2000/svg\' fill=\'none\' viewBox=\'0 0 20 20\'%3E%3Cpath stroke=\'%2394a3b8\' stroke-linecap=\'round\' stroke-linejoin=\'round\' stroke-width=\'1.5\' d=\'M6 8l4 4 4-4\'/%3E%3C/svg%3E')] bg-[position:right_0.75rem_center] bg-no-repeat bg-[size:1.25rem] pr-10">
               <option value="" disabled selected class="bg-slate-900 text-slate-400">Seleccioná tu categoría</option>
@@ -188,6 +194,12 @@
             <input type="text" id="telefono" required placeholder="Ej: 11 1234-5678" class="block w-full px-3 py-2.5 bg-slate-800 border border-slate-700 text-slate-100 rounded-xl focus:outline-none focus:ring-2 focus:ring-orange-500 text-xs font-semibold">
           </div>
 
+          <!-- Direccion (solo modo Figuritas Sueltas) -->
+          <div id="direccionSection" class="hidden">
+            <label for="direccion" class="block text-[10px] font-extrabold text-slate-355 uppercase tracking-wider mb-1.5">Dirección de Entrega *</label>
+            <input type="text" id="direccion" placeholder="Ej: Calle 123, Olivos" class="block w-full px-3 py-2.5 bg-slate-800 border border-slate-700 text-slate-100 rounded-xl focus:outline-none focus:ring-2 focus:ring-sky-500 text-xs font-semibold">
+          </div>
+
           <!-- Cantidad a Reservar (solo modo Álbum) -->
           <div id="albumSection" class="flex items-center justify-between py-2 border-t border-b border-slate-800">
             <div>
@@ -211,6 +223,19 @@
             <div id="figuritasContainer" class="space-y-2"></div>
             <button type="button" onclick="addFiguritaRow()" class="w-full py-2 border border-dashed border-purple-500/40 text-purple-300 hover:bg-purple-500/10 text-[10px] font-bold uppercase tracking-wider rounded-xl transition">
               + Agregar otra FiguGigante
+            </button>
+          </div>
+
+          <!-- Figuritas Faltantes a Encargar (solo modo Figuritas Sueltas) -->
+          <div id="sueltasSection" class="hidden py-2 border-t border-b border-slate-800 space-y-3">
+            <div class="flex items-center justify-between">
+              <span class="block text-[10px] font-extrabold text-slate-355 uppercase tracking-wider">Figuritas Faltantes *</span>
+              <span class="text-[10px] text-sky-400 font-bold mt-0.5">Precio unitario: $5.000</span>
+            </div>
+            <p class="text-[9px] text-slate-500">Números válidos: 0 a 600, o ORC1 a ORC5</p>
+            <div id="sueltasContainer" class="space-y-2"></div>
+            <button type="button" onclick="addSueltaRow()" class="w-full py-2 border border-dashed border-sky-500/40 text-sky-300 hover:bg-sky-500/10 text-[10px] font-bold uppercase tracking-wider rounded-xl transition">
+              + Agregar otra figurita
             </button>
           </div>
 
@@ -312,25 +337,37 @@
         return false;
       }
 
-      // Alterna entre modo Álbum y modo FiguGigante
+      // Alterna entre modo Álbum, modo FiguGigante y modo Figuritas Sueltas
       function setTipo(tipo) {
         tipoPedido = tipo;
         document.getElementById('tipoPedido').value = tipo;
 
         const btnAlbum = document.getElementById('btnModoAlbum');
         const btnFigu = document.getElementById('btnModoFigu');
+        const btnSueltas = document.getElementById('btnModoSueltas');
         const albumSection = document.getElementById('albumSection');
         const figuSection = document.getElementById('figuSection');
+        const sueltasSection = document.getElementById('sueltasSection');
+        const categoriaSection = document.getElementById('categoriaSection');
+        const direccionSection = document.getElementById('direccionSection');
 
         const nombreInput = document.getElementById('nombre');
         const categoriaInput = document.getElementById('categoria');
         const telefonoInput = document.getElementById('telefono');
+        const direccionInput = document.getElementById('direccion');
         const comprobanteInput = document.getElementById('comprobante');
 
+        btnAlbum.className = 'toggle-btn';
+        btnFigu.className = 'toggle-btn';
+        btnSueltas.className = 'toggle-btn';
+        albumSection.classList.add('hidden');
+        figuSection.classList.add('hidden');
+        sueltasSection.classList.add('hidden');
+        categoriaSection.classList.remove('hidden');
+        direccionSection.classList.add('hidden');
+
         if (tipo === 'figugigante') {
-          btnAlbum.className = 'toggle-btn';
           btnFigu.className = 'toggle-btn active-figu';
-          albumSection.classList.add('hidden');
           figuSection.classList.remove('hidden');
 
           document.getElementById('headerIcon').textContent = '🦸';
@@ -351,11 +388,33 @@
           if (document.getElementById('figuritasContainer').children.length === 0) {
             addFiguritaRow();
           }
+        } else if (tipo === 'figuritassueltas') {
+          btnSueltas.className = 'toggle-btn active-sueltas';
+          sueltasSection.classList.remove('hidden');
+          categoriaSection.classList.add('hidden');
+          direccionSection.classList.remove('hidden');
+
+          document.getElementById('headerIcon').textContent = '🧩';
+          document.getElementById('mainTitle').textContent = 'Pedido de Figuritas';
+          document.getElementById('formTitle').textContent = 'Encargá tus Figuritas Faltantes';
+          document.getElementById('formSubtitle').textContent = 'Completá tus datos y subí el comprobante para encargar las figuritas que te faltan para llenar el álbum.';
+          document.getElementById('nombreLabel').textContent = 'Nombre de Contacto *';
+          document.getElementById('telefonoLabel').textContent = 'Teléfono de Contacto *';
+          document.getElementById('comprobanteLabel').textContent = 'Comprobante de Transferencia (Foto o PDF) *';
+          document.getElementById('submitBtnText').textContent = 'Encargar Figuritas';
+
+          nombreInput.required = true;
+          categoriaInput.required = false;
+          telefonoInput.required = true;
+          direccionInput.required = true;
+          comprobanteInput.required = true;
+
+          if (document.getElementById('sueltasContainer').children.length === 0) {
+            addSueltaRow();
+          }
         } else {
           btnAlbum.className = 'toggle-btn active-album';
-          btnFigu.className = 'toggle-btn';
           albumSection.classList.remove('hidden');
-          figuSection.classList.add('hidden');
 
           document.getElementById('headerIcon').textContent = '📖';
           document.getElementById('mainTitle').textContent = 'Reserva de Álbumes';
@@ -370,6 +429,7 @@
           nombreInput.required = true;
           categoriaInput.required = true;
           telefonoInput.required = true;
+          direccionInput.required = false;
           comprobanteInput.required = true;
         }
 
@@ -401,6 +461,30 @@
         recalculateTotal();
       }
 
+      // Agrega una fila para encargar una figurita suelta (solo número)
+      function addSueltaRow() {
+        figuritaRowSeq++;
+        const container = document.getElementById('sueltasContainer');
+
+        const row = document.createElement('div');
+        row.className = 'figurita-row flex items-center space-x-2';
+        row.dataset.rowId = figuritaRowSeq;
+        row.innerHTML = `
+          <input type="text" placeholder="N° Figu (ej: 245 u ORC1)" class="figu-numero flex-1 px-3 py-2 bg-slate-800 border border-slate-700 text-slate-100 rounded-xl focus:outline-none focus:ring-2 focus:ring-sky-500 text-xs font-semibold" oninput="recalculateTotal()">
+          <button type="button" onclick="removeSueltaRow(this)" class="w-8 h-8 flex-shrink-0 rounded-lg bg-slate-800 border border-slate-700 text-slate-400 hover:text-rose-400 hover:border-rose-500/50 transition flex items-center justify-center select-none">×</button>
+        `;
+        container.appendChild(row);
+        recalculateTotal();
+      }
+
+      // Quita una fila de figurita suelta (siempre se deja al menos una)
+      function removeSueltaRow(button) {
+        const container = document.getElementById('sueltasContainer');
+        if (container.children.length <= 1) return;
+        button.closest('.figurita-row').remove();
+        recalculateTotal();
+      }
+
       // Detecta si el usuario está en el navegador interno de Instagram/Facebook
       function checkInAppBrowser() {
         const ua = navigator.userAgent || navigator.vendor || window.opera;
@@ -416,6 +500,9 @@
         if (tipoPedido === 'figugigante') {
           const rows = document.getElementById('figuritasContainer').children.length;
           total = rows * 10000;
+        } else if (tipoPedido === 'figuritassueltas') {
+          const rows = document.getElementById('sueltasContainer').children.length;
+          total = rows * 5000;
         } else {
           const qty = parseInt(document.getElementById('cantidad').value) || 1;
           total = qty * 30000;
@@ -485,16 +572,14 @@
         const telefono = document.getElementById('telefono').value.trim();
         const observaciones = document.getElementById('observaciones').value.trim();
 
-        if (tipoPedido !== 'figugigante') {
-          if (!categoria) {
-            showToast("❌ Debes seleccionar una categoría", "error");
-            return;
-          }
+        if (tipoPedido === 'album' && !categoria) {
+          showToast("❌ Debes seleccionar una categoría", "error");
+          return;
+        }
 
-          if (!fileObj) {
-            showToast("❌ Debes adjuntar el comprobante de transferencia", "error");
-            return;
-          }
+        if (tipoPedido !== 'figugigante' && !fileObj) {
+          showToast("❌ Debes adjuntar el comprobante de transferencia", "error");
+          return;
         }
 
         if (tipoPedido === 'figugigante') {
@@ -552,6 +637,87 @@
                 categoria: categoria,
                 telefono: telefono,
                 figuritas: figuritas,
+                observaciones: observaciones,
+                fileObj: fileObj
+              }),
+              redirect: "follow"
+            })
+            .then(res => res.json())
+            .then(response => {
+              setFormLoading(false);
+              if (response.success) {
+                showToast("✓ Pedido guardado con éxito", "success");
+                showSuccessScreen(response.id);
+              } else {
+                showToast("❌ Error al registrar el pedido: " + response.error, "error");
+              }
+            })
+            .catch(err => {
+              setFormLoading(false);
+              showToast("❌ Error de conexión: " + err.message, "error");
+            });
+          }
+          return;
+        }
+
+        if (tipoPedido === 'figuritassueltas') {
+          const direccion = document.getElementById('direccion').value.trim();
+
+          if (!direccion) {
+            showToast("❌ Debes ingresar una dirección de entrega", "error");
+            return;
+          }
+
+          const numeros = [];
+          let huboErrorSueltas = false;
+
+          document.querySelectorAll('#sueltasContainer .figurita-row').forEach(row => {
+            const numeroInput = row.querySelector('.figu-numero');
+            const numero = numeroInput.value.trim();
+            const numeroValido = esNumeroFiguritaValido(numero);
+            numeroInput.classList.toggle('invalid', !numeroValido);
+
+            if (!numeroValido) {
+              huboErrorSueltas = true;
+            } else {
+              numeros.push(numero);
+            }
+          });
+
+          if (huboErrorSueltas || numeros.length === 0) {
+            showToast("❌ Revisá los números de figurita (0-600 u ORC1-ORC5)", "error");
+            return;
+          }
+
+          setFormLoading(true);
+          showToast("Registrando tu pedido...", "loading");
+
+          if (typeof google !== 'undefined' && google.script && google.script.run) {
+            google.script.run
+              .withSuccessHandler(response => {
+                setFormLoading(false);
+                showToast("✓ Pedido guardado con éxito", "success");
+                showSuccessScreen(response.id);
+              })
+              .withFailureHandler(err => {
+                setFormLoading(false);
+                showToast("❌ Error al registrar el pedido: " + err.message, "error");
+              })
+              .guardarRegistroFiguritasSueltas(nombre, direccion, telefono, numeros, observaciones, fileObj);
+          } else {
+            const webAppUrl = "https://script.google.com/macros/s/AKfycbz-fgBkbynC_yw8R8t2bs7xNfpHJI4JwsE0pjtQD2Zthd9uqtNB22HKFyuurwZxqakF/exec";
+
+            fetch(webAppUrl, {
+              method: "POST",
+              headers: {
+                "Content-Type": "text/plain;charset=utf-8"
+              },
+              body: JSON.stringify({
+                tipo: "figuritassueltas",
+                nombre: nombre,
+                direccion: direccion,
+                telefono: telefono,
+                numeros: numeros,
                 observaciones: observaciones,
                 fileObj: fileObj
               }),
@@ -657,6 +823,10 @@
           document.getElementById('successTitle').textContent = '¡Pedido Registrado!';
           document.getElementById('successDesc').textContent = 'Registramos tu pedido de FiguGigante. Tu código de pedido es:';
           document.getElementById('successFooter').textContent = 'Guardá este código para retirar tus fotos cuando estén listas.';
+        } else if (tipoPedido === 'figuritassueltas') {
+          document.getElementById('successTitle').textContent = '¡Pedido Registrado!';
+          document.getElementById('successDesc').textContent = 'Registramos tu pedido de figuritas faltantes. Tu código de pedido es:';
+          document.getElementById('successFooter').textContent = 'Guardá este código para hacer el seguimiento de tu pedido.';
         } else {
           document.getElementById('successTitle').textContent = '¡Reserva Registrada!';
           document.getElementById('successDesc').textContent = 'Te anotaste con éxito en la reserva de álbumes. Tu código de reserva es:';
@@ -669,11 +839,14 @@
         document.getElementById('nombre').value = '';
         document.getElementById('categoria').value = '';
         document.getElementById('telefono').value = '';
+        document.getElementById('direccion').value = '';
         document.getElementById('cantidad').value = 1;
         document.getElementById('observaciones').value = '';
         document.getElementById('comprobante').value = '';
         document.getElementById('figuritasContainer').innerHTML = '';
         addFiguritaRow();
+        document.getElementById('sueltasContainer').innerHTML = '';
+        addSueltaRow();
         document.getElementById('fileUploadLabel').textContent = "Seleccionar o arrastrar comprobante";
         fileObj = null;
         recalculateTotal();

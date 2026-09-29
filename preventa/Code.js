@@ -261,6 +261,86 @@ function guardarRegistroFiguGigante(nombre, categoria, telefono, figuritas, obse
   }
 }
 
+/**
+ * Registra un pedido de figuritas sueltas (puntuales) para completar el álbum,
+ * en su propia pestaña de la planilla.
+ */
+function guardarRegistroFiguritasSueltas(nombre, direccion, telefono, numeros, observaciones, fileObj) {
+  try {
+    if (!Array.isArray(numeros) || numeros.length === 0) {
+      throw new Error("Debes agregar al menos una figurita al pedido.");
+    }
+    numeros.forEach(numero => {
+      if (!esNumeroFiguritaValido(numero)) {
+        throw new Error("Número de figurita inválido: " + numero);
+      }
+    });
+
+    const ss = SpreadsheetApp.openById(SPREADSHEET_PV_ID);
+    let sheet = ss.getSheetByName("FiguritasSueltas");
+    const headers = ["Timestamp", "ID Pedido", "Nombre", "Dirección", "Teléfono", "Número Figurita", "Observaciones", "Comprobante", "Estado"];
+
+    if (!sheet) {
+      sheet = ss.insertSheet("FiguritasSueltas");
+      sheet.appendRow(headers);
+      sheet.getRange(1, 1, 1, headers.length).setBackground("#434343").setFontColor("#ffffff").setFontWeight("bold");
+    } else {
+      sheet.getRange(1, 1, 1, headers.length).setValues([headers]);
+    }
+
+    const timestamp = new Date();
+
+    // Generar un ID único con formato FS-XXXX (4 dígitos aleatorios)
+    let newId;
+    let isUnique = false;
+    const values = sheet.getDataRange().getValues();
+    const existingIds = values.map(row => String(row[1]).trim());
+
+    while (!isUnique) {
+      const randomDigits = Math.floor(1000 + Math.random() * 9000);
+      newId = "FS-" + randomDigits;
+      if (existingIds.indexOf(newId) === -1) {
+        isUnique = true;
+      }
+    }
+
+    // Subir comprobante a Google Drive (obligatorio, es un pedido pago)
+    let fileUrl = "";
+    if (fileObj && fileObj.data) {
+      const comprobantesFolder = DriveApp.getFolderById(FOLDER_COMPROBANTES_ID);
+      const cleanName = (nombre || "SinNombre").replace(/[^a-zA-Z0-9]/g, "_");
+      const ext = fileObj.fileName.substring(fileObj.fileName.lastIndexOf('.'));
+      const newFileName = "Comprobante_" + newId + "_" + cleanName + ext;
+      const blob = Utilities.newBlob(Utilities.base64Decode(fileObj.data), fileObj.mimeType, newFileName);
+      const comprobanteFile = comprobantesFolder.createFile(blob);
+      fileUrl = comprobanteFile.getUrl();
+    } else {
+      throw new Error("El comprobante de transferencia es obligatorio.");
+    }
+
+    const estado = "Pendiente";
+
+    numeros.forEach(numero => {
+      sheet.appendRow([
+        timestamp,
+        newId,
+        nombre,
+        direccion,
+        telefono,
+        String(numero).trim(),
+        observaciones,
+        fileUrl,
+        estado
+      ]);
+    });
+
+    return { success: true, id: newId };
+  } catch (e) {
+    Logger.log("Error en guardarRegistroFiguritasSueltas: " + e.toString());
+    throw new Error("No se pudo registrar el pedido: " + e.message);
+  }
+}
+
 function testDrive() {
   const folder = DriveApp.getFolderById(FOLDER_COMPROBANTES_ID);
   const testFile = folder.createFile("test_conexion.txt", "Prueba de conexión exitosa");
@@ -282,6 +362,15 @@ function doPost(e) {
         data.categoria,
         data.telefono,
         data.figuritas,
+        data.observaciones,
+        data.fileObj
+      );
+    } else if (data.tipo === "figuritassueltas") {
+      result = guardarRegistroFiguritasSueltas(
+        data.nombre,
+        data.direccion,
+        data.telefono,
+        data.numeros,
         data.observaciones,
         data.fileObj
       );
