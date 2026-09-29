@@ -116,19 +116,19 @@
       <!-- Header Card (Simple Public Logo) -->
       <div class="text-center space-y-2 mb-4">
         <div id="headerIcon" class="inline-flex items-center justify-center w-16 h-16 bg-orange-500/10 rounded-3xl border border-orange-500/20 text-3xl shadow-inner">
-          📖
+          🧩
         </div>
-        <h1 id="mainTitle" class="text-2xl font-black text-white font-outfit tracking-tight">Reserva de Álbumes</h1>
+        <h1 id="mainTitle" class="text-2xl font-black text-white font-outfit tracking-tight">Pedido de Figuritas</h1>
         <p class="text-xs text-orange-400 font-bold uppercase tracking-wider">Club Olivos Hockey</p>
       </div>
 
       <!-- Toggle Álbum / FiguGigante / Figuritas Sueltas -->
       <div class="toggle-container">
-        <button type="button" id="btnModoAlbum" class="toggle-btn active-album" onclick="setTipo('album')">📖 Álbum</button>
+        <button type="button" id="btnModoAlbum" class="toggle-btn" onclick="setTipo('album')">📖 Álbum</button>
         <button type="button" id="btnModoFigu" class="toggle-btn" onclick="setTipo('figugigante')">🦸 FiguGigante</button>
-        <button type="button" id="btnModoSueltas" class="toggle-btn" onclick="setTipo('figuritassueltas')">🧩 Figus Sueltas</button>
+        <button type="button" id="btnModoSueltas" class="toggle-btn active-sueltas" onclick="setTipo('figuritassueltas')">🧩 Figus Sueltas</button>
       </div>
-      <input type="hidden" id="tipoPedido" value="album">
+      <input type="hidden" id="tipoPedido" value="figuritassueltas">
 
       <!-- Pre-sale Form Card -->
       <div id="formCard" class="bg-slate-900/80 border border-slate-800 backdrop-blur-md rounded-3xl p-6 shadow-2xl relative overflow-hidden transition-all duration-300">
@@ -136,19 +136,19 @@
         <div class="absolute -right-10 -top-10 w-32 h-32 bg-orange-500/10 rounded-full blur-3xl"></div>
 
         <div class="mb-6">
-          <h2 id="formTitle" class="text-lg font-black text-white font-outfit">Reservá tu Álbum</h2>
-          <p id="formSubtitle" class="text-slate-400 text-xs mt-1">Completá tus datos de contacto y subí el comprobante de transferencia para registrarte.</p>
+          <h2 id="formTitle" class="text-lg font-black text-white font-outfit">Encargá tus Figuritas Faltantes</h2>
+          <p id="formSubtitle" class="text-slate-400 text-xs mt-1">Completá tus datos y subí el comprobante para encargar las figuritas que te faltan para llenar el álbum.</p>
         </div>
 
         <form id="preventaForm" class="space-y-4">
           <!-- Nombre -->
           <div>
-            <label for="nombre" id="nombreLabel" class="block text-[10px] font-extrabold text-slate-350 uppercase tracking-wider mb-1.5">Nombre de la Jugadora *</label>
+            <label for="nombre" id="nombreLabel" class="block text-[10px] font-extrabold text-slate-350 uppercase tracking-wider mb-1.5">Nombre de Contacto *</label>
             <input type="text" id="nombre" required placeholder="Ej: Delfina Rossi" class="block w-full px-3 py-2.5 bg-slate-800 border border-slate-700 text-slate-100 rounded-xl focus:outline-none focus:ring-2 focus:ring-orange-500 text-xs font-semibold">
           </div>
 
           <!-- Categoria/Grupo -->
-          <div id="categoriaSection">
+          <div id="categoriaSection" class="hidden">
             <label for="categoria" id="categoriaLabel" class="block text-[10px] font-extrabold text-slate-350 uppercase tracking-wider mb-1.5">Categoría / División *</label>
             <select id="categoria" required class="block w-full px-3 py-2.5 bg-slate-800 border border-slate-700 text-slate-100 rounded-xl focus:outline-none focus:ring-2 focus:ring-orange-500 text-xs font-semibold appearance-none bg-[url('data:image/svg+xml;charset=utf-8,%3Csvg xmlns=\'http://www.w3.org/2000/svg\' fill=\'none\' viewBox=\'0 0 20 20\'%3E%3Cpath stroke=\'%2394a3b8\' stroke-linecap=\'round\' stroke-linejoin=\'round\' stroke-width=\'1.5\' d=\'M6 8l4 4 4-4\'/%3E%3C/svg%3E')] bg-[position:right_0.75rem_center] bg-no-repeat bg-[size:1.25rem] pr-10">
               <option value="" disabled selected class="bg-slate-900 text-slate-400">Seleccioná tu categoría</option>
@@ -195,13 +195,13 @@
           </div>
 
           <!-- Direccion (solo modo Figuritas Sueltas) -->
-          <div id="direccionSection" class="hidden">
+          <div id="direccionSection">
             <label for="direccion" class="block text-[10px] font-extrabold text-slate-355 uppercase tracking-wider mb-1.5">Dirección de Entrega *</label>
-            <input type="text" id="direccion" placeholder="Ej: Calle 123, Olivos" class="block w-full px-3 py-2.5 bg-slate-800 border border-slate-700 text-slate-100 rounded-xl focus:outline-none focus:ring-2 focus:ring-sky-500 text-xs font-semibold">
+            <input type="text" id="direccion" required placeholder="Ej: Calle 123, Olivos" class="block w-full px-3 py-2.5 bg-slate-800 border border-slate-700 text-slate-100 rounded-xl focus:outline-none focus:ring-2 focus:ring-sky-500 text-xs font-semibold">
           </div>
 
           <!-- Cantidad a Reservar (solo modo Álbum) -->
-          <div id="albumSection" class="flex items-center justify-between py-2 border-t border-b border-slate-800">
+          <div id="albumSection" class="hidden flex items-center justify-between py-2 border-t border-b border-slate-800">
             <div>
               <span class="block text-[10px] font-extrabold text-slate-355 uppercase tracking-wider">Cantidad de Álbumes *</span>
               <span class="text-[10px] text-orange-400 font-bold mt-0.5">Precio unitario: $30.000</span>
@@ -227,7 +227,7 @@
           </div>
 
           <!-- Figuritas Faltantes a Encargar (solo modo Figuritas Sueltas) -->
-          <div id="sueltasSection" class="hidden py-2 border-t border-b border-slate-800 space-y-3">
+          <div id="sueltasSection" class="py-2 border-t border-b border-slate-800 space-y-3">
             <div class="flex items-center justify-between">
               <span class="block text-[10px] font-extrabold text-slate-355 uppercase tracking-wider">Figuritas Faltantes *</span>
               <span class="text-[10px] text-sky-400 font-bold mt-0.5">Precio unitario: $5.000</span>
@@ -322,7 +322,7 @@
 
       window.addEventListener('DOMContentLoaded', () => {
         addFiguritaRow();
-        recalculateTotal();
+        setTipo('figuritassueltas');
         checkInAppBrowser();
       });
 
