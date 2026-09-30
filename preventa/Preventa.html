@@ -224,7 +224,7 @@
           <div id="sueltasSection" class="py-2 border-t border-b border-slate-800 space-y-3">
             <div>
               <span class="block text-[10px] font-extrabold text-slate-355 uppercase tracking-wider">Figuritas Faltantes *</span>
-              <span class="text-[10px] text-sky-400 font-bold mt-0.5 block">1 figu: $5.000 · 2 a 9: $10.000 · 10 o más: $2.000 c/u</span>
+              <span class="text-[10px] text-sky-400 font-bold mt-0.5 block">1 a 2 figus: $5.000 c/u · 3 a 9: $3.333 c/u · 10 o más: $2.000 c/u</span>
             </div>
             <p class="text-[9px] text-slate-500">Números válidos: 0 a 600, o ORC1 a ORC5</p>
             <div id="sueltasContainer" class="space-y-2"></div>
@@ -473,12 +473,19 @@
         recalculateTotal();
       }
 
-      // Calcula el total a pagar por figuritas sueltas según la cantidad:
-      // 1 figu = $5.000 · 2 a 9 = $10.000 fijo · 10 o más = $2.000 c/u
+      // Calcula el total a pagar por figuritas sueltas según la cantidad,
+      // con precio por unidad decreciente por tramos:
+      // 1 a 2 figus = $5.000 c/u · 3 a 9 = $3.333 c/u · 10 o más = $2.000 c/u
       function calcularTotalFiguritasSueltas(cantidad) {
-        if (cantidad <= 1) return 5000;
-        if (cantidad <= 9) return 10000;
-        return cantidad * 2000;
+        let precioUnitario;
+        if (cantidad <= 2) {
+          precioUnitario = 5000;
+        } else if (cantidad <= 9) {
+          precioUnitario = 3333;
+        } else {
+          precioUnitario = 2000;
+        }
+        return cantidad * precioUnitario;
       }
 
       // Detecta si el usuario está en el navegador interno de Instagram/Facebook
