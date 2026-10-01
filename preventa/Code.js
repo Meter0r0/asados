@@ -120,12 +120,17 @@ function guardarRegistroPreventa(nombre, categoria, telefono, cantidad, observac
 }
 
 /**
- * Valida que un número de figurita sea un entero entre 0 y 600,
- * o uno de los códigos especiales orc1..orc5.
+ * Valida que un número de figurita sea un entero entre 0 y 600
+ * (con "bis" opcional, ej: "94 bis"), o uno de los códigos especiales orc1..orc5.
  */
 function esNumeroFiguritaValido(valor) {
   const v = String(valor || '').trim().toLowerCase();
   if (/^orc[1-5]$/.test(v)) return true;
+  const bisMatch = v.match(/^(\d{1,3})\s*bis$/);
+  if (bisMatch) {
+    const n = parseInt(bisMatch[1], 10);
+    return n >= 0 && n <= 600;
+  }
   if (/^\d{1,3}$/.test(v)) {
     const n = parseInt(v, 10);
     return n >= 0 && n <= 600;
